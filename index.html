@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BINARUAL — Binaural Beats Synthesizer</title>
+    <style>
+        :root {
+            --accent: #4F6EF7;
+            --accent-delta: #4F6EF7;
+            --accent-theta: #A855F7;
+            --accent-alpha: #22D3EE;
+            --accent-beta: #F59E0B;
+            --accent-gamma: #F43F5E;
+            --bg-dark: #0A0A0F;
+            --glass-bg: rgba(255,255,255,0.04);
+            --glass-border: rgba(255,255,255,0.08);
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255,255,255,0.6);
+            --shadow-inner: inset 0 1px 0 rgba(255,255,255,0.1);
+            --shadow-outer: 0 8px 32px rgba(0,0,0,0.4);
+            --knob-size: 80px;
+            --knob-size-sm: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background blobs */
+        .bg-blobs {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: blob-pulse 20s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent-theta) 0%, transparent 70%);
+            top: 50%;
+            right: -150px;
+            animation-delay: -7s;
+        }
+
+        .blob-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--accent-alpha) 0%, transparent 70%);
+            bottom: -100px;
+            left: 30%;
+            animation-delay: -14s;
+        }
+
+        @keyframes blob-pulse {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.95); }
+            75% { transform: translate(-50px, -30px) scale(1.05); }
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Glass panel mixin */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-outer), var(--shadow-inner);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 32px 0 24px;
+        }
+
+        .app-name {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .state-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .state-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        /* Visualizer */
+        .visualizer-container {
+            margin: 24px 0;
+            padding: 24px;
+        }
+
+        .visualizer {
+            width: 100%;
+            height: 120px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Grid layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        /* Preset strip */
+        .preset-strip {
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .preset-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+        }
+
+        .preset-btn:active {
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .preset-btn.active {
+            color: #0A0A0F;
+            font-weight: 700;
+        }
+
+        .preset-btn.active[data-state="delta"] { background: var(--accent-delta); border-color: var(--accent-delta); }
+        .preset-btn.active[data-state="theta"] { background: var(--accent-theta); border-color: var(--accent-theta); }
+        .preset-btn.active[data-state="alpha"] { background: var(--accent-alpha); border-color: var(--accent-alpha); }
+        .preset-btn.active[data-state="beta"] { background: var(--accent-beta); border-color: var(--accent-beta); }
+        .preset-btn.active[data-state="gamma"] { background: var(--accent-gamma); border-color: var(--accent-gamma); }
+
+        /* Info display */
+        .info-display {
+            padding: 20px;
+        }
+
+        .freq-readout {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .freq-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            tabular-nums;
+        }
+
+        .brainwave-label {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            transition: color 0.3s ease;
+        }
+
+        /* Knob container */
+        .knob-row {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            padding: 24px;
+            flex-wrap: wrap;
+        }
+
+        .knob-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .knob-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .knob {
+            width: var(--knob-size);
+            height: var(--knob-size);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 4px 16px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+            position: relative;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .knob:active {
+            cursor: grabbing;
+        }
+
+        .knob-sm {
+            width: var(--knob-size-sm);
+            height: var(--knob-size-sm);
+        }
+
+        .knob-svg {
+            position: absolute;
+            inset: 0;
+            transform: rotate(-135deg);
+        }
+
+        .knob-track {
+            fill: none;
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 4;
+        }
+
+        .knob-progress {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke 0.3s ease;
+        }
+
+        .knob-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 35%;
+            background: var(--text-primary);
+            transform-origin: bottom center;
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .knob-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .knob-unit {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-left: 2px;
+        }
+
+        /* Tooltip */
+        .knob-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--text-primary);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+            margin-bottom: 8px;
+        }
+
+        .knob-wrapper:hover .knob-tooltip {
+            opacity: 1;
+        }
+
+        /* Waveform selector */
+        .waveform-selector {
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .waveform-btn {
+            flex: 1;
+            padding: 14px 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .waveform-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+        }
+
+        .waveform-btn:active {
+            transform: translateY(2px);
+        }
+
+        .waveform-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #0A0A0F;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+
+        /* Timer section */
+        .timer-section {
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .timer-presets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .timer-btn {
+            flex: 1;
+            padding: 10px 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .timer-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+        }
+
+        .timer-btn:active {
+            transform: translateY(2px);
+        }
+
+        .timer-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #0A0A0F;
+        }
+
+        .timer-display {
+            text-align: center;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 48px;
+            font-weight: 300;
+            color: var(--text-primary);
+            tabular-nums;
+            position: relative;
+        }
+
+        .timer-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 10px;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .timer-overlay.visible {
+            opacity: 1;
+        }
+
+        /* Main controls */
+        .main-controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            max-width: 200px;
+            padding: 18px 32px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: #0A0A0F;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary.playing {
+            background: var(--accent-gamma);
+            animation: play-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes play-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+        }
+
+        .btn-secondary {
+            flex: 1;
+            max-width: 150px;
+            padding: 18px 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Noise toggle */
+        .noise-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .noise-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .noise-toggle:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .noise-toggle.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .noise-toggle.active .noise-label {
+            color: #0A0A0F;
+        }
+
+        .noise-toggle.active .noise-indicator {
+            background: #0A0A0F;
+        }
+
+        .noise-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .noise-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            transition: background 0.2s ease;
+        }
+
+        /* Focus styles */
+        button:focus-visible,
+        .knob:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .knob-row {
+                gap: 20px;
+            }
+
+            .knob {
+                --knob-size: 64px;
+            }
+
+            .knob-sm {
+                --knob-size-sm: 50px;
+            }
+
+            .preset-btn, .waveform-btn {
+                padding: 10px 6px;
+                font-size: 9px;
+            }
+
+            .timer-display {
+                font-size: 36px;
+            }
+
+            .main-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-primary, .btn-secondary {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+
+            .knob-row {
+                gap: 16px;
+            }
+
+            .knob {
+                --knob-size: 56px;
+            }
+
+            .knob-sm {
+                --knob-size-sm: 48px;
+            }
+
+            .header {
+                padding: 20px 0 16px;
+            }
+
+            .app-name {
+                font-size: 12px;
+            }
+
+            .visualizer {
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="app-name">BINARUAL</h1>
+            <p class="tagline">Binaural Beats Synthesizer</p>
+            <div class="state-badge">
+                <span class="state-dot"></span>
+                <span class="state-text">READY</span>
+            </div>
+        </header>
+
+        <!-- Visualizer -->
+        <div class="visualizer-container glass-panel">
+            <canvas class="visualizer" id="visualizer"></canvas>
+        </div>
+
+        <!-- Preset Strip -->
+        <div class="preset-strip glass-panel">
+            <div style="display: flex; gap: 8px;">
+                <button class="preset-btn" data-state="delta" data-preset="delta" aria-label="Delta wave preset for deep sleep">
+                    DELTA<br>
+                    <span style="font-size: 9px; opacity: 0.7;">Deep Sleep</span>
+                </button>
+                <button class="preset-btn" data-state="theta" data-preset="theta" aria-label="Theta wave preset for meditation">
+                    THETA<br>
+                    <span style="font-size: 9px; opacity: 0.7;">Meditation</span>
+                </button>
+                <button class="preset-btn active" data-state="alpha" data-preset="alpha" aria-label="Alpha wave preset for relaxed focus">
+                    ALPHA<br>
+                    <span style="font-size: 9px; opacity: 0.7;">Relaxed Focus</span>
+                </button>
+                <button class="preset-btn" data-state="beta" data-preset="beta" aria-label="Beta wave preset for active thinking">
+                    BETA<br>
+                    <span style="font-size: 9px; opacity: 0.7;">Active Thinking</span>
+                </button>
+                <button class="preset-btn" data-state="gamma" data-preset="gamma" aria-label="Gamma wave preset for peak awareness">
+                    GAMMA<br>
+                    <span style="font-size: 9px; opacity: 0.7;">Peak Awareness</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Display -->
+        <div class="info-display glass-panel">
+            <div class="freq-readout">
+                <span class="freq-value" id="leftFreq">205.0</span> Hz <span style="opacity: 0.5;">|</span> 
+                <span class="freq-value" id="rightFreq">195.0</span> Hz
+            </div>
+            <div class="brainwave-label" id="brainwaveLabel">ALPHA — 10 Hz Beat Frequency</div>
+        </div>
+
+        <!-- Knob Row 1 -->
+        <div class="knob-row glass-panel">
+            <div class="knob-wrapper">
+                <div class="knob-tooltip">Carrier Frequency</div>
+                <div class="knob" id="carrierKnob" tabindex="0" aria-label="Carrier frequency knob" data-min="40" data-max="500" data-value="200" data-unit="Hz">
+                    <svg class="knob-svg" viewBox="0 0 80 80">
+                        <circle class="knob-track" cx="40" cy="40" r="35" stroke-dasharray="165 220"/>
+                        <circle class="knob-progress" id="carrierProgress" cx="40" cy="40" r="35" stroke-dasharray="165 220" stroke-dashoffset="165"/>
+                    </svg>
+                    <div class="knob-handle" id="carrierHandle"></div>
+                </div>
+                <div class="knob-label">CARRIER</div>
+                <div class="knob-value"><span id="carrierValue">200</span><span class="knob-unit">Hz</span></div>
+            </div>
+
+            <div class="knob-wrapper">
+                <div class="knob-tooltip">Beat Frequency</div>
+                <div class="knob" id="beatKnob" tabindex="0" aria-label="Beat frequency knob" data-min="0.5" data-max="50" data-value="10" data-unit="Hz">
+                    <svg class="knob-svg" viewBox="0 0 80 80">
+                        <circle class="knob-track" cx="40" cy="40" r="35" stroke-dasharray="165 220"/>
+                        <circle class="knob-progress" id="beatProgress" cx="40" cy="40" r="35" stroke-dasharray="165 220" stroke-dashoffset="132"/>
+                    </svg>
+                    <div class="knob-handle" id="beatHandle"></div>
+                </div>
+                <div class="knob-label">BEAT Δ</div>
+                <div class="knob-value"><span id="beatValue">10.0</span><span class="knob-unit">Hz</span></div>
+            </div>
+
+            <div class="knob-wrapper">
+                <div class="knob-tooltip">Master Volume</div>
+                <div class="knob" id="volumeKnob" tabindex="0" aria-label="Master volume knob" data-min="0" data-max="100" data-value="70" data-unit="%">
+                    <svg class="knob-svg" viewBox="0 0 80 80">
+                        <circle class="knob-track" cx="40" cy="40" r="35" stroke-dasharray="165 220"/>
+                        <circle class="knob-progress" id="volumeProgress" cx="40" cy="40" r="35" stroke-dasharray="165 220" stroke-dashoffset="49"/>
+                    </svg>
+                    <div class="knob-handle" id="volumeHandle"></div>
+                </div>
+                <div class="knob-label">VOLUME</div>
+                <div class="knob-value"><span id="volumeValue">70</span><span class="knob-unit">%</span></div>
+            </div>
+
+            <div class="knob-wrapper">
+                <div class="knob-tooltip">Fade Duration</div>
+                <div class="knob" id="fadeKnob" tabindex="0" aria-label="Fade in/out duration knob" data-min="0" data-max="10" data-value="2" data-unit="s">
+                    <svg class="knob-svg" viewBox="0 0 80 80">
+                        <circle class="knob-track" cx="40" cy="40" r="35" stroke-dasharray="165 220"/>
+                        <circle class="knob-progress" id="fadeProgress" cx="40" cy="40" r="35" stroke-dasharray="165 220" stroke-dashoffset="132"/>
+                    </svg>
+                    <div class="knob-handle" id="fadeHandle"></div>
+                </div>
+                <div class="knob-label">FADE</div>
+                <div class="knob-value"><span id="fadeValue">2.0</span><span class="knob-unit">s</span></div>
+            </div>
+        </div>
+
+        <!-- Knob Row 2 -->
+        <div class="knob-row glass-panel">
+            <div class="knob-wrapper">
+                <div class="knob-tooltip">Stereo Pan Balance</div>
+                <div class="knob knob-sm" id="panKnob" tabindex="0" aria-label="Stereo pan balance knob" data-min="-1" data-max="1" data-value="0" data-unit="">
+                    <svg class="knob-svg" viewBox="0 0 60 60">
+                        <circle class="knob-track" cx="30" cy="30" r="25" stroke-dasharray="110 147"/>
+                        <circle class="knob-progress" id="panProgress" cx="30" cy="30" r="25" stroke-dasharray="110 147" stroke-dashoffset="55"/>
+                    </svg>
+                    <div class="knob-handle" id="panHandle"></div>
+                </div>
+                <div class="knob-label">PAN</div>
+                <div class="knob-value"><span id="panValue">0.00</span></div>
+            </div>
+
+            <div class="noise-control">
+                <div class="noise-toggle" id="noiseToggle" role="button" aria-label="Toggle noise layer" tabindex="0">
+                    <div class="noise-indicator"></div>
+                    <span class="noise-label">NOISE LAYER</span>
+                </div>
+                <div class="knob-wrapper">
+                    <div class="knob knob-sm" id="noiseKnob" tabindex="0" aria-label="Noise volume knob" data-min="0" data-max="100" data-value="20" data-unit="%">
+                        <svg class="knob-svg" viewBox="0 0 60 60">
+                            <circle class="knob-track" cx="30" cy="30" r="25" stroke-dasharray="110 147"/>
+                            <circle class="knob-progress" id="noiseProgress" cx="30" cy="30" r="25" stroke-dasharray="110 147" stroke-dashoffset="88"/>
+                        </svg>
+                        <div class="knob-handle" id="noiseHandle"></div>
+                    </div>
+                    <div class="knob-label">NOISE VOL</div>
+                    <div class="knob-value"><span id="noiseValue">20</span><span class="knob-unit">%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waveform Selector -->
+        <div class="waveform-selector glass-panel">
+            <div style="display: flex; gap: 8px;">
+                <button class="waveform-btn active" data-waveform="sine" aria-label="Sine wave">SINE</button>
+                <button class="waveform-btn" data-waveform="triangle" aria-label="Triangle wave">TRI</button>
+                <button class="waveform-btn" data-waveform="square" aria-label="Square wave">SQR</button>
+                <button class="waveform-btn" data-waveform="sawtooth" aria-label="Sawtooth wave">SAW</button>
+            </div>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="timer-section glass-panel">
+            <div class="timer-presets">
+                <button class="timer-btn" data-timer="5" aria-label="Set 5 minute timer">5 MIN</button>
+                <button class="timer-btn" data-timer="15" aria-label="Set 15 minute timer">15 MIN</button>
+                <button class="timer-btn" data-timer="30" aria-label="Set 30 minute timer">30 MIN</button>
+            </div>
+            <div class="timer-display">
+                <span id="timerDisplay">00:00</span>
+                <span class="timer-overlay" id="timerOverlay">⏱ <span id="countdownDisplay">05:00</span></span>
+            </div>
+        </div>
+
+        <!-- Main Controls -->
+        <div class="main-controls">
+            <button class="btn-primary" id="playBtn" aria-label="Play or stop binaural beats">
+                <span id="playBtnText">▶ PLAY</span>
+            </button>
+            <button class="btn-secondary" id="resetBtn" aria-label="Reset all controls">RESET</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // BINARUAL — Binaural Beats Synthesizer
+        // ============================================
+
+        // State
+        const state = {
+            isPlaying: false,
+            audioContext: null,
+            masterGain: null,
+            analyser: null,
+            leftOscillator: null,
+            rightOscillator: null,
+            leftGain: null,
+            rightGain: null,
+            panner: null,
+            noiseNode: null,
+            noiseGain: null,
+            noiseBuffer: null,
+            noiseFilter: null,
+            timerInterval: null,
+            countdownInterval: null,
+            sessionStartTime: null,
+            presetTimer: null,
+            
+            // Parameters
+            carrierFreq: 200,
+            beatFreq: 10,
+            volume: 70,
+            fadeTime: 2,
+            pan: 0,
+            noiseVolume: 20,
+            noiseEnabled: false,
+            waveform: 'sine',
+            
+            // Presets
+            presets: {
+                delta: { beat: 2, carrier: 180, label: 'Deep Sleep' },
+                theta: { beat: 6, carrier: 200, label: 'Meditation' },
+                alpha: { beat: 10, carrier: 210, label: 'Relaxed Focus' },
+                beta: { beat: 20, carrier: 220, label: 'Active Thinking' },
+                gamma: { beat: 40, carrier: 200, label: 'Peak Awareness' }
+            },
+            
+            // Colors
+            colors: {
+                delta: '#4F6EF7',
+                theta: '#A855F7',
+                alpha: '#22D3EE',
+                beta: '#F59E0B',
+                gamma: '#F43F5E'
+            }
+        };
+
+        // ============================================
+        // Audio Engine
+        // ============================================
+
+        function initAudioContext() {
+            if (state.audioContext) return;
+            
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            state.audioContext = new AudioContext();
+            
+            // Master gain
+            state.masterGain = state.audioContext.createGain();
+            state.masterGain.gain.value = state.volume / 100;
+            
+            // Analyser for visualizer
+            state.analyser = state.audioContext.createAnalyser();
+            state.analyser.fftSize = 2048;
+            
+            // Connect master to analyser to destination
+            state.masterGain.connect(state.analyser);
+            state.analyser.connect(state.audioContext.destination);
+            
+            // Create noise buffer
+            createNoiseBuffer();
+        }
+
+        function createNoiseBuffer() {
+            const bufferSize = state.audioContext.sampleRate * 2; // 2 seconds
+            state.noiseBuffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
+            const data = state.noiseBuffer.getChannelData(0);
+            
+            // Brown noise (more ambient)
+            let lastOut = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                data[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = data[i];
+                data[i] *= 3.5; // Compensate for gain
+            }
+        }
+
+        function getOscillatorType() {
+            return state.waveform;
+        }
+
+        function startOscillators() {
+            if (!state.audioContext) return;
+            
+            // Disconnect old oscillators if any
+            if (state.leftOscillator) {
+                try { state.leftOscillator.stop(); } catch(e) {}
+                try { state.leftOscillator.disconnect(); } catch(e) {}
+            }
+            if (state.rightOscillator) {
+                try { state.rightOscillator.stop(); } catch(e) {}
+                try { state.rightOscillator.disconnect(); } catch(e) {}
+            }
+            
+            // Calculate frequencies
+            const leftFreq = state.carrierFreq + state.beatFreq / 2;
+            const rightFreq = state.carrierFreq - state.beatFreq / 2;
+            
+            // Create new oscillators
+            state.leftOscillator = state.audioContext.createOscillator();
+            state.rightOscillator = state.audioContext.createOscillator();
+            
+            state.leftOscillator.type = getOscillatorType();
+            state.rightOscillator.type = getOscillatorType();
+            
+            state.leftOscillator.frequency.value = leftFreq;
+            state.rightOscillator.frequency.value = rightFreq;
+            
+            // Create individual gains for fade
+            state.leftGain = state.audioContext.createGain();
+            state.rightGain = state.audioContext.createGain();
+            state.leftGain.gain.value = 0;
+            state.rightGain.gain.value = 0;
+            
+            // Create stereo panner
+            state.panner = state.audioContext.createStereoPanner();
+            state.panner.pan.value = state.pan;
+            
+            // Connect left channel
+            state.leftOscillator.connect(state.leftGain);
+            state.leftGain.connect(state.panner);
+            
+            // Connect right channel
+            state.rightOscillator.connect(state.rightGain);
+            state.rightGain.connect(state.panner);
+            
+            // Connect panner to master
+            state.panner.connect(state.masterGain);
+            
+            // Start oscillators
+            state.leftOscillator.start();
+            state.rightOscillator.start();
+            
+            // Fade in
+            const fadeTime = state.isPlaying ? state.fadeTime : 0.1;
+            state.leftGain.gain.linearRampToValueAtTime(0.5, state.audioContext.currentTime + fadeTime);
+            state.rightGain.gain.linearRampToValueAtTime(0.5, state.audioContext.currentTime + fadeTime);
+            
+            // Start noise if enabled
+            if (state.noiseEnabled) {
+                startNoise();
+            }
+            
+            // Update displays
+            updateLRDisplay();
+        }
+
+        function stopOscillators() {
+            if (!state.audioContext) return;
+            
+            const fadeTime = state.fadeTime;
+            
+            // Fade out
+            if (state.leftGain && state.audioContext) {
+                try {
+                    state.leftGain.gain.linearRampToValueAtTime(0, state.audioContext.currentTime + fadeTime);
+                    state.rightGain.gain.linearRampToValueAtTime(0, state.audioContext.currentTime + fadeTime);
+                } catch(e) {}
+            }
+            
+            // Stop noise
+            stopNoise();
+            
+            // Stop oscillators after fade
+            setTimeout(() => {
+                if (state.leftOscillator) {
+                    try { state.leftOscillator.stop(); } catch(e) {}
+                    try { state.leftOscillator.disconnect(); } catch(e) {}
+                }
+                if (state.rightOscillator) {
+                    try { state.rightOscillator.stop(); } catch(e) {}
+                    try { state.rightOscillator.disconnect(); } catch(e) {}
+                }
+                state.leftOscillator = null;
+                state.rightOscillator = null;
+            }, fadeTime * 1000 + 100);
+        }
+
+        function startNoise() {
+            if (!state.audioContext || !state.noiseBuffer) return;
+            
+            // Disconnect old noise node
+            if (state.noiseNode) {
+                try { state.noiseNode.stop(); } catch(e) {}
+                try { state.noiseNode.disconnect(); } catch(e) {}
+            }
+            
+            state.noiseNode = state.audioContext.createBufferSource();
+            state.noiseNode.buffer = state.noiseBuffer;
+            state.noiseNode.loop = true;
+            
+            state.noiseFilter = state.audioContext.createBiquadFilter();
+            state.noiseFilter.type = 'lowpass';
+            state.noiseFilter.frequency.value = 400;
+            
+            state.noiseGain = state.audioContext.createGain();
+            state.noiseGain.gain.value = state.noiseEnabled ? state.noiseVolume / 200 : 0;
+            
+            state.noiseNode.connect(state.noiseFilter);
+            state.noiseFilter.connect(state.noiseGain);
+            state.noiseGain.connect(state.masterGain);
+            
+            state.noiseNode.start();
+        }
+
+        function stopNoise() {
+            if (state.noiseNode) {
+                try { state.noiseNode.stop(); } catch(e) {}
+                try { state.noiseNode.disconnect(); } catch(e) {}
+            }
+            state.noiseNode = null;
+        }
+
+        function updateMasterVolume() {
+            if (state.masterGain && state.audioContext) {
+                state.masterGain.gain.linearRampToValueAtTime(
+                    state.volume / 100,
+                    state.audioContext.currentTime + 0.1
+                );
+            }
+        }
+
+        function updatePan() {
+            if (state.panner && state.audioContext) {
+                state.panner.pan.linearRampToValueAtTime(
+                    state.pan,
+                    state.audioContext.currentTime + 0.1
+                );
+            }
+        }
+
+        function updateNoiseVolume() {
+            if (state.noiseGain && state.audioContext) {
+                state.noiseGain.gain.linearRampToValueAtTime(
+                    state.noiseEnabled ? state.noiseVolume / 200 : 0,
+                    state.audioContext.currentTime + 0.1
+                );
+            }
+        }
+
+        // ============================================
+        // Knob Control System
+        // ============================================
+
+        class Knob {
+            constructor(element) {
+                this.element = element;
+                this.handle = element.querySelector('.knob-handle');
+                this.progress = element.querySelector('.knob-progress');
+                this.valueDisplay = element.parentElement.querySelector('.knob-value span');
+                this.unitDisplay = element.parentElement.querySelector('.knob-unit');
+                
+                this.min = parseFloat(element.dataset.min);
+                this.max = parseFloat(element.dataset.max);
+                this.value = parseFloat(element.dataset.value);
+                this.unit = element.dataset.unit;
+                
+                this.isDragging = false;
+                this.startY = 0;
+                this.startValue = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.updateDisplay();
+                this.addEventListeners();
+            }
+            
+            addEventListeners() {
+                this.element.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+                this.element.addEventListener('keydown', (e) => this.onKeyDown(e));
+                
+                // Prevent context menu on knob
+                this.element.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+            
+            onPointerDown(e) {
+                e.preventDefault();
+                this.isDragging = true;
+                this.startY = e.clientY;
+                this.startValue = this.value;
+                
+                this.element.setPointerCapture(e.pointerId);
+                this.element.style.cursor = 'grabbing';
+                
+                document.addEventListener('pointermove', this.onPointerMove);
+                document.addEventListener('pointerup', this.onPointerUp);
+            }
+            
+            onPointerMove = (e) => {
+                if (!this.isDragging) return;
+                
+                const deltaY = this.startY - e.clientY;
+                const range = this.max - this.min;
+                const sensitivity = range / 200;
+                
+                let newValue = this.startValue + deltaY * sensitivity;
+                newValue = Math.max(this.min, Math.min(this.max, newValue));
+                
+                this.setValue(newValue);
+            }
+            
+            onPointerUp = (e) => {
+                if (!this.isDragging) return;
+                
+                this.isDragging = false;
+                this.element.style.cursor = 'grab';
+                
+                document.removeEventListener('pointermove', this.onPointerMove);
+                document.removeEventListener('pointerup', this.onPointerUp);
+                
+                try {
+                    this.element.releasePointerCapture(e.pointerId);
+                } catch(e) {}
+            }
+            
+            onKeyDown(e) {
+                const step = (this.max - this.min) / 100;
+                
+                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    this.setValue(this.value + step);
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.setValue(this.value - step);
+                }
+            }
+            
+            setValue(value) {
+                // Snap to 1 decimal for small ranges
+                if (this.max - this.min <= 50) {
+                    value = Math.round(value * 10) / 10;
+                } else {
+                    value = Math.round(value);
+                }
+                
+                this.value = Math.max(this.min, Math.min(this.max, value));
+                this.updateDisplay();
+                this.onValueChange(this.value);
+            }
+            
+            updateDisplay() {
+                // Calculate rotation (-135 to 135 degrees)
+                const percentage = (this.value - this.min) / (this.max - this.min);
+                const rotation = -135 + (percentage * 270);
+                
+                // Update handle rotation
+                this.handle.style.transform = `rotate(${rotation}deg)`;
+                
+                // Update progress arc
+                if (this.progress) {
+                    const maxDashOffset = 165; // For 80px knob
+                    const dashOffset = maxDashOffset - (percentage * maxDashOffset);
+                    this.progress.style.strokeDashoffset = dashOffset;
+                }
+                
+                // Update value display
+                if (this.valueDisplay) {
+                    if (this.max - this.min <= 50) {
+                        this.valueDisplay.textContent = this.value.toFixed(1);
+                    } else {
+                        this.valueDisplay.textContent = Math.round(this.value);
+                    }
+                }
+                
+                // Update unit display
+                if (this.unitDisplay) {
+                    this.unitDisplay.textContent = this.unit;
+                }
+            }
+            
+            onValueChange(value) {
+                // Override in subclasses
+            }
+        }
+
+        // Initialize knobs
+        const carrierKnob = new Knob(document.getElementById('carrierKnob'));
+        carrierKnob.onValueChange = (value) => {
+            state.carrierFreq = value;
+            if (state.isPlaying) {
+                startOscillators();
+            }
+        };
+
+        const beatKnob = new Knob(document.getElementById('beatKnob'));
+        beatKnob.onValueChange = (value) => {
+            state.beatFreq = value;
+            updateBrainwaveBadge();
+            if (state.isPlaying) {
+                startOscillators();
+            }
+        };
+
+        const volumeKnob = new Knob(document.getElementById('volumeKnob'));
+        volumeKnob.onValueChange = (value) => {
+            state.volume = value;
+            updateMasterVolume();
+        };
+
+        const fadeKnob = new Knob(document.getElementById('fadeKnob'));
+        fadeKnob.onValueChange = (value) => {
+            state.fadeTime = value;
+        };
+
+        const panKnob = new Knob(document.getElementById('panKnob'));
+        panKnob.onValueChange = (value) => {
+            state.pan = value;
+            updatePan();
+        };
+
+        const noiseKnob = new Knob(document.getElementById('noiseKnob'));
+        noiseKnob.onValueChange = (value) => {
+            state.noiseVolume = value;
+            updateNoiseVolume();
+        };
+
+        // ============================================
+        // Visualizer
+        // ============================================
+
+        function initVisualizer() {
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                
+                if (!state.analyser || !state.isPlaying) {
+                    // Draw idle state
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.fillRect(0, 0, rect.width, rect.height);
+                    
+                    // Draw center line
+                    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0, rect.height / 2);
+                    ctx.lineTo(rect.width, rect.height / 2);
+                    ctx.stroke();
+                    return;
+                }
+                
+                const bufferLength = state.analyser.timeDomainData.length;
+                const dataArray = new Uint8Array(bufferLength);
+                state.analyser.getByteTimeDomainData(dataArray);
+                
+                // Clear canvas
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(0, 0, rect.width, rect.height);
+                
+                // Draw waveform
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                ctx.beginPath();
+                
+                const sliceWidth = rect.width / bufferLength;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * rect.height / 2;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                ctx.lineTo(rect.width, rect.height / 2);
+                ctx.stroke();
+                
+                // Add glow effect
+                ctx.shadowColor = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+            
+            draw();
+        }
+
+        // ============================================
+        // Brainwave Badge System
+        // ============================================
+
+        function updateBrainwaveBadge() {
+            const beat = state.beatFreq;
+            let stateName = '';
+            let stateColor = '';
+            
+            if (beat < 4) {
+                stateName = 'DELTA';
+                stateColor = state.colors.delta;
+            } else if (beat < 8) {
+                stateName = 'THETA';
+                stateColor = state.colors.theta;
+            } else if (beat < 13) {
+                stateName = 'ALPHA';
+                stateColor = state.colors.alpha;
+            } else if (beat < 30) {
+                stateName = 'BETA';
+                stateColor = state.colors.beta;
+            } else {
+                stateName = 'GAMMA';
+                stateColor = state.colors.gamma;
+            }
+            
+            // Update CSS variable
+            document.documentElement.style.setProperty('--accent', stateColor);
+            
+            // Update badge
+            const badge = document.querySelector('.state-badge .state-text');
+            const dot = document.querySelector('.state-dot');
+            
+            if (state.isPlaying) {
+                badge.textContent = `${stateName} — ${beat.toFixed(1)} Hz`;
+            } else {
+                badge.textContent = 'READY';
+            }
+            
+            dot.style.background = stateColor;
+            dot.style.boxShadow = `0 0 12px ${stateColor}`;
+            
+            // Update label
+            const label = document.getElementById('brainwaveLabel');
+            label.textContent = `${stateName} — ${beat.toFixed(1)} Hz Beat Frequency`;
+            label.style.color = stateColor;
+            
+            // Update preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.state === stateName.toLowerCase()) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // ============================================
+        // L/R Frequency Display
+        // ============================================
+
+        function updateLRDisplay() {
+            const leftFreq = state.carrierFreq + state.beatFreq / 2;
+            const rightFreq = state.carrierFreq - state.beatFreq / 2;
+            
+            document.getElementById('leftFreq').textContent = leftFreq.toFixed(1);
+            document.getElementById('rightFreq').textContent = rightFreq.toFixed(1);
+        }
+
+        // ============================================
+        // Timer System
+        // ============================================
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startSessionTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+            }
+            
+            state.sessionStartTime = Date.now();
+            
+            state.timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - state.sessionStartTime) / 1000);
+                document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+            }, 1000);
+        }
+
+        function stopSessionTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+            document.getElementById('timerDisplay').textContent = '00:00';
+        }
+
+        function setPresetTimer(minutes) {
+            // Clear existing timer
+            if (state.presetTimer) {
+                clearInterval(state.presetTimer);
+            }
+            
+            // Update UI
+            document.querySelectorAll('.timer-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.timer) === minutes) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            const totalSeconds = minutes * 60;
+            let remaining = totalSeconds;
+            
+            document.getElementById('countdownDisplay').textContent = formatTime(remaining);
+            document.getElementById('timerOverlay').classList.add('visible');
+            
+            state.presetTimer = setInterval(() => {
+                remaining--;
+                document.getElementById('countdownDisplay').textContent = formatTime(remaining);
+                
+                if (remaining <= 0) {
+                    clearInterval(state.presetTimer);
+                    state.presetTimer = null;
+                    document.getElementById('timerOverlay').classList.remove('visible');
+                    
+                    // Auto-stop with fade
+                    stopAudio();
+                }
+            }, 1000);
+        }
+
+        function clearPresetTimer() {
+            if (state.presetTimer) {
+                clearInterval(state.presetTimer);
+                state.presetTimer = null;
+            }
+            document.getElementById('timerOverlay').classList.remove('visible');
+            document.querySelectorAll('.timer-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        // ============================================
+        // Play/Stop Control
+        // ============================================
+
+        function playAudio() {
+            initAudioContext();
+            
+            // Resume audio context if suspended
+            if (state.audioContext.state === 'suspended') {
+                state.audioContext.resume();
+            }
+            
+            state.isPlaying = true;
+            startOscillators();
+            startSessionTimer();
+            
+            // Update UI
+            document.getElementById('playBtn').classList.add('playing');
+            document.getElementById('playBtnText').textContent = '■ STOP';
+            document.querySelector('.state-badge .state-text').textContent = 
+                `${getBrainwaveName(state.beatFreq)} — ${state.beatFreq.toFixed(1)} Hz`;
+            
+            updateBrainwaveBadge();
+        }
+
+        function stopAudio() {
+            state.isPlaying = false;
+            stopOscillators();
+            stopSessionTimer();
+            
+            // Update UI
+            document.getElementById('playBtn').classList.remove('playing');
+            document.getElementById('playBtnText').textContent = '▶ PLAY';
+            document.querySelector('.state-badge .state-text').textContent = 'READY';
+            
+            updateBrainwaveBadge();
+        }
+
+        function togglePlay() {
+            if (state.isPlaying) {
+                stopAudio();
+            } else {
+                playAudio();
+            }
+        }
+
+        function getBrainwaveName(beat) {
+            if (beat < 4) return 'DELTA';
+            if (beat < 8) return 'THETA';
+            if (beat < 13) return 'ALPHA';
+            if (beat < 30) return 'BETA';
+            return 'GAMMA';
+        }
+
+        // ============================================
+        // Reset Function
+        // ============================================
+
+        function resetAll() {
+            // Stop audio
+            stopAudio();
+            clearPresetTimer();
+            
+            // Reset values
+            state.carrierFreq = 200;
+            state.beatFreq = 10;
+            state.volume = 70;
+            state.fadeTime = 2;
+            state.pan = 0;
+            state.noiseVolume = 20;
+            state.noiseEnabled = false;
+            state.waveform = 'sine';
+            
+            // Update knobs
+            carrierKnob.setValue(200);
+            beatKnob.setValue(10);
+            volumeKnob.setValue(70);
+            fadeKnob.setValue(2);
+            panKnob.setValue(0);
+            noiseKnob.setValue(20);
+            
+            // Update UI
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.state === 'alpha') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.waveform-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.waveform === 'sine') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            document.getElementById('noiseToggle').classList.remove('active');
+            
+            // Reset displays
+            updateLRDisplay();
+            updateBrainwaveBadge();
+            
+            // Disconnect audio nodes
+            if (state.audioContext) {
+                if (state.leftOscillator) {
+                    try { state.leftOscillator.stop(); } catch(e) {}
+                    try { state.leftOscillator.disconnect(); } catch(e) {}
+                }
+                if (state.rightOscillator) {
+                    try { state.rightOscillator.stop(); } catch(e) {}
+                    try { state.rightOscillator.disconnect(); } catch(e) {}
+                }
+            }
+        }
+
+        // ============================================
+        // Event Listeners
+        // ============================================
+
+        // Play button
+        document.getElementById('playBtn').addEventListener('click', togglePlay);
+        document.getElementById('playBtn').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', resetAll);
+        document.getElementById('resetBtn').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                resetAll();
+            }
+        });
+
+        // Preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = state.presets[btn.dataset.preset];
+                if (preset) {
+                    // Update knobs
+                    carrierKnob.setValue(preset.carrier);
+                    beatKnob.setValue(preset.beat);
+                    
+                    // Update state
+                    state.carrierFreq = preset.carrier;
+                    state.beatFreq = preset.beat;
+                    
+                    // Update displays
+                    updateLRDisplay();
+                    updateBrainwaveBadge();
+                    
+                    // If playing, restart oscillators
+                    if (state.isPlaying) {
+                        startOscillators();
+                    }
+                }
+            });
+            
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
+        });
+
+        // Waveform buttons
+        document.querySelectorAll('.waveform-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.waveform = btn.dataset.waveform;
+                
+                document.querySelectorAll('.waveform-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // If playing, restart oscillators
+                if (state.isPlaying) {
+                    startOscillators();
+                }
+            });
+            
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
+        });
+
+        // Timer preset buttons
+        document.querySelectorAll('.timer-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const minutes = parseInt(btn.dataset.timer);
+                setPresetTimer(minutes);
+            });
+            
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
+        });
+
+        // Noise toggle
+        document.getElementById('noiseToggle').addEventListener('click', () => {
+            state.noiseEnabled = !state.noiseEnabled;
+            
+            document.getElementById('noiseToggle').classList.toggle('active', state.noiseEnabled);
+            
+            if (state.isPlaying) {
+                if (state.noiseEnabled) {
+                    startNoise();
+                } else {
+                    stopNoise();
+                }
+                updateNoiseVolume();
+            }
+        });
+        
+        document.getElementById('noiseToggle').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                document.getElementById('noiseToggle').click();
+            }
+        });
+
+        // Window resize for visualizer
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('visualizer');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initVisualizer();
+            updateBrainwaveBadge();
+            updateLRDisplay();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopAudio();
+            if (state.audioContext) {
+                state.audioContext.close();
+            }
+        });
+    </script>
+</body>
+</html>
