@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BINARUAL — Binaural Beats Synthesizer</title>
     <style>
         :root {
-            --accent: #4F6EF7;
+            --accent: #8B5CF6;
             --accent-delta: #4F6EF7;
-            --accent-theta: #A855F7;
-            --accent-alpha: #22D3EE;
-            --accent-beta: #F59E0B;
-            --accent-gamma: #F43F5E;
+            --accent-theta: #6D5EF9;
+            --accent-alpha: #8B5CF6;
+            --accent-beta: #A855F7;
+            --accent-gamma: #C084FC;
+            --accent-contrast: #FFFFFF;
             --bg-dark: #0A0A0F;
             --glass-bg: rgba(255,255,255,0.04);
             --glass-border: rgba(255,255,255,0.08);
@@ -40,55 +41,12 @@
             position: relative;
         }
 
-        /* Animated background blobs */
-        .bg-blobs {
+        /* 3D Interactive WebGL Background */
+        #webgl-canvas {
             position: fixed;
             inset: 0;
-            overflow: hidden;
             z-index: 0;
-            pointer-events: none;
-        }
-
-        .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: blob-pulse 20s ease-in-out infinite;
-        }
-
-        .blob-1 {
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-            top: -200px;
-            left: -200px;
-            animation-delay: 0s;
-        }
-
-        .blob-2 {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, var(--accent-theta) 0%, transparent 70%);
-            top: 50%;
-            right: -150px;
-            animation-delay: -7s;
-        }
-
-        .blob-3 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, var(--accent-alpha) 0%, transparent 70%);
-            bottom: -100px;
-            left: 30%;
-            animation-delay: -14s;
-        }
-
-        @keyframes blob-pulse {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(50px, -50px) scale(1.1); }
-            50% { transform: translate(-30px, 30px) scale(0.95); }
-            75% { transform: translate(-50px, -30px) scale(1.05); }
+            pointer-events: auto;
         }
 
         /* Main container */
@@ -120,6 +78,67 @@
             gap: 4px;
         }
 
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .theme-switcher {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            max-width: 440px;
+        }
+
+        .theme-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color 0.28s ease, border-color 0.28s ease, box-shadow 0.32s ease, color 0.28s ease, transform 0.18s ease;
+        }
+
+        .theme-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-1px);
+        }
+
+        .theme-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-contrast);
+            box-shadow: 0 0 24px var(--accent);
+        }
+
+        .theme-btn:active {
+            transform: translateY(1px);
+        }
+
+        .theme-chip {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--swatch, var(--accent));
+            box-shadow: 0 0 14px var(--swatch, var(--accent));
+            flex: 0 0 auto;
+        }
+
         .app-name {
             font-size: 24px;
             font-weight: 700;
@@ -142,6 +161,7 @@
             background: rgba(0,0,0,0.3);
             border-radius: 8px;
             border: 1px solid var(--glass-border);
+            transition: border-color 0.28s ease, box-shadow 0.32s ease, background-color 0.28s ease;
         }
 
         .state-dot {
@@ -150,6 +170,7 @@
             border-radius: 50%;
             background: var(--accent);
             box-shadow: 0 0 12px var(--accent);
+            transition: background-color 0.28s ease, box-shadow 0.32s ease;
         }
 
         .state-text {
@@ -157,6 +178,21 @@
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
+            transition: color 0.28s ease;
+        }
+
+        .brainwave-label,
+        .knob-progress,
+        .knob-value,
+        .timer-value,
+        .countdown-value,
+        .play-btn,
+        .play-btn::before,
+        .preset-btn,
+        .waveform-btn,
+        .timer-btn,
+        .noise-toggle {
+            transition: background-color 0.28s ease, border-color 0.28s ease, box-shadow 0.32s ease, color 0.28s ease, stroke 0.28s ease, transform 0.18s ease, opacity 0.28s ease;
         }
 
         /* Visualizer */
@@ -168,14 +204,26 @@
             border: 1px solid var(--glass-border);
             border-radius: 16px;
             box-shadow: var(--shadow-outer);
+            position: relative;
         }
 
         .visualizer {
             width: 100%;
-            height: 120px;
-            background: rgba(0,0,0,0.3);
+            height: 140px;
+            background: rgba(0,0,0,0.4);
             border-radius: 8px;
             border: 1px solid var(--glass-border);
+            display: block;
+        }
+
+        .visualizer-label {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         /* Grid layouts */
@@ -232,6 +280,7 @@
         .preset-btn.active {
             background: var(--accent);
             border-color: var(--accent);
+            color: var(--accent-contrast);
             box-shadow: 0 0 20px var(--accent);
         }
 
@@ -414,6 +463,7 @@
         .waveform-btn.active {
             background: var(--accent);
             border-color: var(--accent);
+            color: var(--accent-contrast);
             box-shadow: 0 0 20px var(--accent);
         }
 
@@ -456,6 +506,8 @@
         .timer-btn.active {
             background: var(--accent);
             border-color: var(--accent);
+            color: var(--accent-contrast);
+            box-shadow: 0 0 18px var(--accent);
         }
 
         .timer-btn:active {
@@ -467,6 +519,7 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            position: relative;
         }
 
         .timer-value {
@@ -525,7 +578,7 @@
             border-radius: 50%;
             background: var(--accent);
             border: none;
-            color: white;
+            color: var(--accent-contrast);
             font-size: 14px;
             font-weight: 700;
             letter-spacing: 2px;
@@ -537,6 +590,27 @@
             justify-content: center;
             align-items: center;
             gap: 4px;
+            position: relative;
+        }
+
+        .play-btn::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .play-btn:hover::before {
+            opacity: 1;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 0; }
         }
 
         .play-btn:hover {
@@ -549,12 +623,18 @@
         }
 
         .play-btn.playing {
-            background: #FF4444;
-            box-shadow: 0 0 40px #FF4444;
+            background: var(--accent);
+            color: var(--accent-contrast);
+            box-shadow: 0 0 56px var(--accent);
+        }
+
+        .play-btn.playing::before {
+            opacity: 1;
+            animation: pulse-ring 2s ease-out infinite;
         }
 
         .play-btn.playing:hover {
-            box-shadow: 0 0 60px #FF4444;
+            box-shadow: 0 0 72px var(--accent);
         }
 
         .play-icon {
@@ -608,7 +688,8 @@
         .noise-toggle.active {
             background: var(--accent);
             border-color: var(--accent);
-            color: white;
+            color: var(--accent-contrast);
+            box-shadow: 0 0 18px var(--accent);
         }
 
         /* Responsive */
@@ -620,6 +701,11 @@
             .knob-row {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .header {
+                align-items: flex-start;
+                gap: 20px;
+            }
         }
 
         @media (max-width: 600px) {
@@ -627,6 +713,22 @@
                 flex-direction: column;
                 gap: 16px;
                 text-align: center;
+            }
+
+            .header-right {
+                width: 100%;
+                align-items: center;
+            }
+
+            .theme-switcher {
+                width: 100%;
+                max-width: none;
+                justify-content: center;
+            }
+
+            .theme-btn {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 0;
             }
             
             .grid-2, .grid-4, .knob-row {
@@ -645,204 +747,237 @@
                 flex-wrap: wrap;
             }
             
-            .waveform-btn {
-                flex: 0 1 calc(50% - 4px);
+            .main-controls {
+                flex-direction: column;
+                align-items: center;
             }
+            
+            .visualizer {
+                height: 100px;
+            }
+            
+            .knob {
+                width: 70px !important;
+                height: 70px !important;
+            }
+            
+            .play-btn {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        /* Focus accessibility */
+        button:focus-visible,
+        .knob:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
         }
     </style>
 </head>
 <body>
-    <!-- Animated background -->
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
+    <!-- 3D Interactive WebGL Background -->
+    <canvas id="webgl-canvas"></canvas>
 
     <div class="container">
         <!-- Header -->
         <header class="header">
             <div class="header-left">
                 <h1 class="app-name">BINARUAL</h1>
-                <p class="tagline">Binaural Beats Synthesizer</p>
+                <p class="tagline">Neural Entrainment Synthesizer</p>
             </div>
-            <div class="state-badge">
-                <div class="state-dot"></div>
-                <span class="state-text">READY</span>
+            <div class="header-right">
+                <div class="theme-switcher" role="group" aria-label="Glow color mode selector">
+                    <button class="theme-btn" data-theme="magenta-glow" aria-label="Use magenta glow color mode" aria-pressed="false" style="--swatch: #D946EF;">
+                        <span class="theme-chip" aria-hidden="true"></span>
+                        <span>Magenta</span>
+                    </button>
+                    <button class="theme-btn" data-theme="orange-creamsicle" aria-label="Use orange creamsicle glow color mode" aria-pressed="false" style="--swatch: #FB923C;">
+                        <span class="theme-chip" aria-hidden="true"></span>
+                        <span>Creamsicle</span>
+                    </button>
+                    <button class="theme-btn active" data-theme="electric-violet" aria-label="Use electric violet glow color mode" aria-pressed="true" style="--swatch: #8B5CF6;">
+                        <span class="theme-chip" aria-hidden="true"></span>
+                        <span>Violet</span>
+                    </button>
+                    <button class="theme-btn" data-theme="sun-blitzed-yellow" aria-label="Use sun-blitzed yellow glow color mode" aria-pressed="false" style="--swatch: #FACC15;">
+                        <span class="theme-chip" aria-hidden="true"></span>
+                        <span>Sun</span>
+                    </button>
+                </div>
+                <div class="state-badge">
+                    <div class="state-dot"></div>
+                    <span class="state-text">READY</span>
+                </div>
             </div>
         </header>
 
-        <!-- Visualizer -->
+        <!-- Waveform Visualizer -->
         <div class="visualizer-container">
+            <span class="visualizer-label">Live Waveform</span>
             <canvas id="visualizer" class="visualizer"></canvas>
         </div>
 
-        <!-- Preset Strip -->
-        <div class="panel">
-            <div class="preset-strip">
-                <button class="preset-btn" data-preset="delta" data-state="delta">DELTA<br>Deep Sleep</button>
-                <button class="preset-btn" data-preset="theta" data-state="theta">THETA<br>Meditation</button>
-                <button class="preset-btn active" data-preset="alpha" data-state="alpha">ALPHA<br>Relaxed Focus</button>
-                <button class="preset-btn" data-preset="beta" data-state="beta">BETA<br>Active Thinking</button>
-                <button class="preset-btn" data-preset="gamma" data-state="gamma">GAMMA<br>Peak Awareness</button>
-            </div>
-        </div>
-
-        <!-- L/R Display Panel -->
+        <!-- Preset Strip & L/R Display -->
         <div class="grid-2">
+            <div class="panel">
+                <div class="preset-strip">
+                    <button class="preset-btn" data-preset="delta" data-state="delta" aria-label="Delta wave preset for deep sleep">DELTA</button>
+                    <button class="preset-btn" data-preset="theta" data-state="theta" aria-label="Theta wave preset for meditation">THETA</button>
+                    <button class="preset-btn active" data-preset="alpha" data-state="alpha" aria-label="Alpha wave preset for relaxed focus">ALPHA</button>
+                    <button class="preset-btn" data-preset="beta" data-state="beta" aria-label="Beta wave preset for active thinking">BETA</button>
+                    <button class="preset-btn" data-preset="gamma" data-state="gamma" aria-label="Gamma wave preset for peak awareness">GAMMA</button>
+                </div>
+            </div>
             <div class="panel lr-display-panel">
                 <div class="lr-display">
                     <div>
                         <div class="lr-label">LEFT</div>
-                        <div class="lr-value"><span id="leftFreq">205.0</span> Hz</div>
+                        <div class="lr-value" id="leftFreq">205.0</div>
+                        <div class="lr-label">Hz</div>
                     </div>
-                    <div style="text-align: right;">
+                    <div>
                         <div class="lr-label">RIGHT</div>
-                        <div class="lr-value"><span id="rightFreq">195.0</span> Hz</div>
+                        <div class="lr-value" id="rightFreq">195.0</div>
+                        <div class="lr-label">Hz</div>
                     </div>
                 </div>
                 <div class="brainwave-label" id="brainwaveLabel">ALPHA — 10.0 Hz Beat Frequency</div>
             </div>
-
-            <!-- Noise Controls -->
-            <div class="panel">
-                <div class="noise-controls">
-                    <button class="noise-toggle" id="noiseToggle">NOISE: OFF</button>
-                    <div class="knob-container knob-sm">
-                        <div class="knob" data-min="0" data-max="100" data-value="20" data-unit="%" id="noiseKnob">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                                <circle class="knob-progress" id="noiseProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                            </svg>
-                            <div class="knob-handle"></div>
-                        </div>
-                        <div class="knob-label">Noise Level</div>
-                        <div class="knob-value"><span id="noiseValue">20</span><span class="knob-unit">%</span></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Knob Row 1: Main Controls -->
+        <!-- Knob Row 1: Carrier, Beat, Volume, Fade -->
         <div class="knob-row">
             <div class="knob-container">
-                <div class="knob" data-min="40" data-max="500" data-value="200" data-unit="Hz" id="carrierKnob">
+                <div class="knob" id="carrierKnob" tabindex="0" aria-label="Carrier frequency">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="carrierProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="carrierProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="141.3"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Carrier</div>
-                <div class="knob-value"><span id="carrierValue">200</span><span class="knob-unit">Hz</span></div>
+                <div class="knob-label">CARRIER</div>
+                <div class="knob-value"><span id="carrierValue">200</span><span class="knob-unit"> Hz</span></div>
             </div>
-
             <div class="knob-container">
-                <div class="knob" data-min="0.5" data-max="50" data-value="10" data-unit="Hz" id="beatKnob">
+                <div class="knob" id="beatKnob" tabindex="0" aria-label="Beat frequency">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="beatProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="beatProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="141.3"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Beat Δ</div>
-                <div class="knob-value"><span id="beatValue">10.0</span><span class="knob-unit">Hz</span></div>
+                <div class="knob-label">BEAT ΔHz</div>
+                <div class="knob-value"><span id="beatValue">10.0</span><span class="knob-unit"> Hz</span></div>
             </div>
-
             <div class="knob-container">
-                <div class="knob" data-min="0" data-max="100" data-value="70" data-unit="%" id="volumeKnob">
+                <div class="knob" id="volumeKnob" tabindex="0" aria-label="Master volume">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="volumeProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="volumeProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="56.5"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Volume</div>
-                <div class="knob-value"><span id="volumeValue">70</span><span class="knob-unit">%</span></div>
+                <div class="knob-label">VOLUME</div>
+                <div class="knob-value"><span id="volumeValue">70</span><span class="knob-unit"> %</span></div>
             </div>
-
             <div class="knob-container">
-                <div class="knob" data-min="0" data-max="10" data-value="2" data-unit="s" id="fadeKnob">
+                <div class="knob" id="fadeKnob" tabindex="0" aria-label="Fade duration">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="fadeProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="fadeProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="113.0"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Fade</div>
-                <div class="knob-value"><span id="fadeValue">2.0</span><span class="knob-unit">s</span></div>
+                <div class="knob-label">FADE</div>
+                <div class="knob-value"><span id="fadeValue">2</span><span class="knob-unit"> s</span></div>
             </div>
         </div>
 
-        <!-- Knob Row 2: Pan & Warmth -->
+        <!-- Knob Row 2: Pan, Warmth, Lowpass, Drift -->
         <div class="knob-row">
-            <div class="knob-container">
-                <div class="knob" data-min="-1" data-max="1" data-value="0" data-unit="" id="panKnob">
+            <div class="knob-container knob-sm">
+                <div class="knob" id="panKnob" tabindex="0" aria-label="Stereo pan balance">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="panProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="panProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="94.2"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Stereo Pan</div>
-                <div class="knob-value"><span id="panValue">0.00</span></div>
+                <div class="knob-label">PAN</div>
+                <div class="knob-value"><span id="panValue">0</span><span class="knob-unit"></span></div>
             </div>
-
-            <div class="knob-container">
-                <div class="knob" data-min="0" data-max="100" data-value="35" data-unit="" id="warmthKnob">
+            <div class="knob-container knob-sm">
+                <div class="knob" id="warmthKnob" tabindex="0" aria-label="Harmonic warmth">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="warmthProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="warmthProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="120.6"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Harmonic Warmth</div>
-                <div class="knob-value"><span id="warmthValue">35</span></div>
+                <div class="knob-label">WARMTH</div>
+                <div class="knob-value"><span id="warmthValue">35</span><span class="knob-unit"></span></div>
             </div>
-
-            <div class="knob-container">
-                <div class="knob" data-min="200" data-max="1200" data-value="800" data-unit="Hz" id="lowpassKnob">
+            <div class="knob-container knob-sm">
+                <div class="knob" id="lowpassKnob" tabindex="0" aria-label="Lowpass filter frequency">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="lowpassProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="lowpassProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="86.7"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Lowpass Filter</div>
-                <div class="knob-value"><span id="lowpassValue">800</span><span class="knob-unit">Hz</span></div>
+                <div class="knob-label">LOWPASS</div>
+                <div class="knob-value"><span id="lowpassValue">800</span><span class="knob-unit"> Hz</span></div>
             </div>
-
-            <div class="knob-container">
-                <div class="knob" data-min="0" data-max="100" data-value="15" data-unit="" id="driftKnob">
+            <div class="knob-container knob-sm">
+                <div class="knob" id="driftKnob" tabindex="0" aria-label="Organic drift amount">
                     <svg viewBox="0 0 100 100">
-                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
-                        <circle class="knob-progress" id="driftProgress" cx="50" cy="50" r="40" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="driftProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="135.8"/>
                     </svg>
                     <div class="knob-handle"></div>
                 </div>
-                <div class="knob-label">Organic Drift</div>
-                <div class="knob-value"><span id="driftValue">15</span></div>
+                <div class="knob-label">DRIFT</div>
+                <div class="knob-value"><span id="driftValue">15</span><span class="knob-unit"></span></div>
             </div>
         </div>
 
-        <!-- Waveform Selector -->
-        <div class="waveform-selector">
-            <button class="waveform-btn active" data-waveform="sine">SINE</button>
-            <button class="waveform-btn" data-waveform="triangle">TRIANGLE</button>
-            <button class="waveform-btn" data-waveform="square">SQUARE</button>
-            <button class="waveform-btn" data-waveform="sawtooth">SAW</button>
+        <!-- Noise Controls -->
+        <div class="knob-row" style="grid-template-columns: 2fr 1fr 1fr;">
+            <div class="knob-container">
+                <div class="knob" id="noiseKnob" tabindex="0" aria-label="Noise layer volume">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="knob-bg" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="47.1"/>
+                        <circle class="knob-progress" id="noiseProgress" cx="50" cy="50" r="40" stroke-dasharray="188.4" stroke-dashoffset="150.7"/>
+                    </svg>
+                    <div class="knob-handle"></div>
+                </div>
+                <div class="knob-label">NOISE</div>
+                <div class="knob-value"><span id="noiseValue">20</span><span class="knob-unit"> %</span></div>
+            </div>
+            <div class="knob-container" style="justify-content: center;">
+                <button class="noise-toggle" id="noiseToggle" aria-label="Toggle noise layer">NOISE: OFF</button>
+            </div>
+            <div class="knob-container" style="justify-content: center;">
+                <div class="waveform-selector" style="flex-wrap: wrap;">
+                    <button class="waveform-btn active" data-waveform="sine" aria-label="Sine waveform">SINE</button>
+                    <button class="waveform-btn" data-waveform="triangle" aria-label="Triangle waveform">TRI</button>
+                    <button class="waveform-btn" data-waveform="square" aria-label="Square waveform">SQR</button>
+                    <button class="waveform-btn" data-waveform="sawtooth" aria-label="Sawtooth waveform">SAW</button>
+                </div>
+            </div>
         </div>
 
         <!-- Timer Section -->
-        <div class="panel timer-section">
+        <div class="timer-section">
             <div class="timer-presets">
-                <button class="timer-btn" data-timer="5">5 MIN</button>
-                <button class="timer-btn" data-timer="15">15 MIN</button>
-                <button class="timer-btn" data-timer="30">30 MIN</button>
+                <button class="timer-btn" data-timer="5" aria-label="Set 5 minute timer">5 MIN</button>
+                <button class="timer-btn" data-timer="15" aria-label="Set 15 minute timer">15 MIN</button>
+                <button class="timer-btn" data-timer="30" aria-label="Set 30 minute timer">30 MIN</button>
             </div>
             <div class="timer-display">
                 <div class="timer-value" id="timerDisplay">00:00</div>
-                <div class="timer-label">Session Timer</div>
+                <div class="timer-label">SESSION TIME</div>
                 <div class="countdown-overlay" id="timerOverlay">
                     <span class="countdown-value" id="countdownDisplay">00:00</span>
                 </div>
@@ -851,38 +986,352 @@
 
         <!-- Main Controls -->
         <div class="main-controls">
-            <button class="reset-btn" id="resetBtn" aria-label="Reset all controls">↺</button>
-            <button class="play-btn" id="playBtn" aria-label="Play or stop">
+            <button class="play-btn" id="playBtn" tabindex="0" aria-label="Play or stop audio">
                 <span class="play-icon">▶</span>
                 <span id="playBtnText">PLAY</span>
             </button>
-            <div style="width: 60px;"></div>
+            <button class="reset-btn" id="resetBtn" tabindex="0" aria-label="Reset all controls">↻</button>
         </div>
     </div>
 
     <script>
         // ============================================
-        // State Management
+        // 3D Interactive WebGL Background
         // ============================================
+        
+        const glCanvas = document.getElementById('webgl-canvas');
+        const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+        
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0;
+        let time = 0;
+        
+        // Vertex shader
+        const vertexShaderSource = `
+            attribute vec2 position;
+            varying vec2 vUv;
+            void main() {
+                vUv = position * 0.5 + 0.5;
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        `;
+        
+        // Fragment shader - Procedural flowing field
+        const fragmentShaderSource = `
+            precision highp float;
+            varying vec2 vUv;
+            uniform float uTime;
+            uniform vec2 uMouse;
+            uniform vec3 uAccent;
+            
+            // Simplex noise
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+            
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1;
+                i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+            
+            void main() {
+                vec2 uv = vUv;
+                
+                // Mouse influence
+                vec2 mouseNorm = uMouse * 2.0 - 1.0;
+                float mouseDist = distance(uv, vec2(0.5 + mouseNorm.x * 0.3, 0.5 + mouseNorm.y * 0.3));
+                
+                // Layered noise for organic flow
+                float n1 = snoise(uv * 2.0 + uTime * 0.1);
+                float n2 = snoise(uv * 4.0 - uTime * 0.15 + vec2(n1));
+                float n3 = snoise(uv * 8.0 + uTime * 0.08);
+                
+                // Combine layers
+                float combined = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+                
+                // Mouse interaction - creates ripple effect
+                float ripple = sin(mouseDist * 20.0 - uTime * 2.0) * 0.15 * exp(-mouseDist * 3.0);
+                combined += ripple;
+                
+                // Accent color mixing based on noise
+                vec3 baseColor = vec3(0.04, 0.04, 0.06);
+                vec3 accent = uAccent;
+                
+                // Create flowing color bands
+                float band = smoothstep(-0.3, 0.3, combined);
+                float glow = smoothstep(0.2, 0.5, combined + 0.2);
+                
+                vec3 color = mix(baseColor, accent, band * 0.15);
+                color += accent * glow * 0.3;
+                
+                // Add subtle grain
+                float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+                color += grain * 0.02;
+                
+                // Vignette
+                float vignette = 1.0 - smoothstep(0.8, 1.5, distance(uv, vec2(0.5)));
+                color *= vignette;
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+        
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program link error:', gl.getProgramInfoLog(program));
+                return null;
+            }
+            return program;
+        }
+        
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+        
+        gl.useProgram(program);
+        
+        // Set up geometry (full screen quad)
+        const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+        
+        const positionLocation = gl.getAttribLocation(program, 'position');
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        
+        // Get uniform locations
+        const timeLocation = gl.getUniformLocation(program, 'uTime');
+        const mouseLocation = gl.getUniformLocation(program, 'uMouse');
+        const accentLocation = gl.getUniformLocation(program, 'uAccent');
+        
+        function resizeGL() {
+            glCanvas.width = window.innerWidth * window.devicePixelRatio;
+            glCanvas.height = window.innerHeight * window.devicePixelRatio;
+            gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+        }
+        
+        resizeGL();
+        window.addEventListener('resize', resizeGL);
+        
+        // Mouse/touch tracking
+        function updateMouse(x, y) {
+            targetMouseX = x / window.innerWidth;
+            targetMouseY = 1.0 - y / window.innerHeight;
+        }
+        
+        glCanvas.addEventListener('mousemove', (e) => {
+            updateMouse(e.clientX, e.clientY);
+        });
+        
+        glCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateMouse(touch.clientX, touch.clientY);
+        }, { passive: false });
+        
+        glCanvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            updateMouse(touch.clientX, touch.clientY);
+        }, { passive: false });
+        
+        // Animation loop
+        function renderGL() {
+            time += 0.016;
+            
+            // Smooth mouse interpolation
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+            
+            gl.uniform1f(timeLocation, time);
+            gl.uniform2f(mouseLocation, mouseX, mouseY);
+            
+            // Get accent color
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+            const r = parseInt(accent.slice(1, 3), 16) / 255;
+            const g = parseInt(accent.slice(3, 5), 16) / 255;
+            const b = parseInt(accent.slice(5, 7), 16) / 255;
+            gl.uniform3f(accentLocation, r, g, b);
+            
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            requestAnimationFrame(renderGL);
+        }
+        
+        renderGL();
+        
+        // ============================================
+        // Knob Class
+        // ============================================
+        
+        class Knob {
+            constructor(element) {
+                this.element = element;
+                this.svg = element.querySelector('svg');
+                this.progress = element.querySelector('.knob-progress');
+                this.min = parseFloat(element.dataset.min) || 0;
+                this.max = parseFloat(element.dataset.max) || 100;
+                this.value = parseFloat(element.dataset.value) || this.min;
+                this.onValueChange = null;
+                this.isDragging = false;
+                this.startY = 0;
+                this.startValue = 0;
+                
+                this.setupEvents();
+                this.updateVisual();
+            }
+            
+            setValue(value) {
+                this.value = Math.max(this.min, Math.min(this.max, value));
+                this.updateVisual();
+                if (this.onValueChange) this.onValueChange(this.value);
+            }
+            
+            updateVisual() {
+                const percent = (this.value - this.min) / (this.max - this.min);
+                const circumference = 2 * Math.PI * 40;
+                const offset = circumference * (1 - percent * 0.75) - (circumference * 0.25);
+                this.progress.style.strokeDasharray = circumference;
+                this.progress.style.strokeDashoffset = offset;
+                
+                // Rotate handle
+                const angle = -135 + (percent * 270);
+                this.element.style.transform = `rotate(${angle}deg)`;
+            }
+            
+            setupEvents() {
+                const start = (y) => {
+                    this.isDragging = true;
+                    this.startY = y;
+                    this.startValue = this.value;
+                    this.element.style.cursor = 'grabbing';
+                };
+                
+                const move = (y) => {
+                    if (!this.isDragging) return;
+                    const delta = (this.startY - y) * (this.max - this.min) / 200;
+                    this.setValue(this.startValue + delta);
+                };
+                
+                const end = () => {
+                    this.isDragging = false;
+                    this.element.style.cursor = 'grab';
+                };
+                
+                // Mouse events
+                this.element.addEventListener('mousedown', (e) => start(e.clientY));
+                document.addEventListener('mousemove', (e) => move(e.clientY));
+                document.addEventListener('mouseup', end);
+                
+                // Touch events
+                this.element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    start(e.touches[0].clientY);
+                }, { passive: false });
+                document.addEventListener('touchmove', (e) => {
+                    if (this.isDragging) {
+                        e.preventDefault();
+                        move(e.touches[0].clientY);
+                    }
+                }, { passive: false });
+                document.addEventListener('touchend', end);
+                
+                // Keyboard events
+                this.element.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        this.setValue(this.value + (this.max - this.min) / 50);
+                    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.setValue(this.value - (this.max - this.min) / 50);
+                    }
+                });
+            }
+        }
+        
+        // ============================================
+        // Audio Engine
+        // ============================================
+        
+        const THEME_PALETTES = {
+            'magenta-glow': {
+                delta: '#A21CAF',
+                theta: '#C026D3',
+                alpha: '#D946EF',
+                beta: '#E879F9',
+                gamma: '#F0ABFC'
+            },
+            'orange-creamsicle': {
+                delta: '#C2410C',
+                theta: '#EA580C',
+                alpha: '#F97316',
+                beta: '#FB923C',
+                gamma: '#FDBA74'
+            },
+            'electric-violet': {
+                delta: '#4F6EF7',
+                theta: '#6D5EF9',
+                alpha: '#8B5CF6',
+                beta: '#A855F7',
+                gamma: '#C084FC'
+            },
+            'sun-blitzed-yellow': {
+                delta: '#CA8A04',
+                theta: '#EAB308',
+                alpha: '#FACC15',
+                beta: '#F59E0B',
+                gamma: '#FDE047'
+            }
+        };
 
         const state = {
             audioContext: null,
             leftOscillator: null,
             rightOscillator: null,
-            leftGain: null,
-            rightGain: null,
-            panner: null,
-            masterGain: null,
+            gainNode: null,
             analyser: null,
+            panner: null,
             lowpassFilter: null,
             waveshaper: null,
             noiseNode: null,
-            noiseBuffer: null,
-            noiseFilter: null,
             noiseGain: null,
+            noiseFilter: null,
             driftLFO: null,
             driftLFOGain: null,
-            
             isPlaying: false,
             carrierFreq: 200,
             beatFreq: 10,
@@ -892,22 +1341,14 @@
             warmth: 35,
             lowpassFreq: 800,
             driftAmount: 15,
-            noiseEnabled: false,
             noiseVolume: 20,
+            noiseEnabled: false,
             waveform: 'sine',
-            
             timerInterval: null,
             presetTimer: null,
             sessionStartTime: null,
-            
-            colors: {
-                delta: '#4F6EF7',
-                theta: '#A855F7',
-                alpha: '#22D3EE',
-                beta: '#F59E0B',
-                gamma: '#F43F5E'
-            },
-            
+            currentTheme: 'electric-violet',
+            colors: { ...THEME_PALETTES['electric-violet'] },
             presets: {
                 delta: { carrier: 180, beat: 2, state: 'Deep Sleep' },
                 theta: { carrier: 200, beat: 6, state: 'Meditation' },
@@ -916,571 +1357,449 @@
                 gamma: { carrier: 200, beat: 40, state: 'Peak Awareness' }
             }
         };
-
+        
         let carrierKnob, beatKnob, volumeKnob, fadeKnob, panKnob, warmthKnob, lowpassKnob, driftKnob, noiseKnob;
-
-        // ============================================
-        // Audio Engine
-        // ============================================
-
+        
         function initAudioContext() {
-            if (state.audioContext) return;
-            
-            state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Create master gain
-            state.masterGain = state.audioContext.createGain();
-            state.masterGain.gain.value = state.volume / 100;
-            
-            // Create analyser for visualizer
-            state.analyser = state.audioContext.createAnalyser();
-            state.analyser.fftSize = 2048;
-            state.analyser.smoothingTimeConstant = 0.8;
-            
-            // Create lowpass filter for warmth (removes harsh high frequencies)
-            // Lower Q for smoother, more musical rolloff
-            state.lowpassFilter = state.audioContext.createBiquadFilter();
-            state.lowpassFilter.type = 'lowpass';
-            state.lowpassFilter.frequency.value = state.lowpassFreq;
-            state.lowpassFilter.Q.value = 0.5;
-            
-            // HIGH-SHELF FILTER: Reduce harsh frequencies above 8kHz
-            // Critical for pleasant high-frequency carrier tones
-            state.highShelfFilter = state.audioContext.createBiquadFilter();
-            state.highShelfFilter.type = 'highshelf';
-            state.highShelfFilter.frequency.value = 8000;
-            state.highShelfFilter.gain.value = -8;
-            state.highShelfFilter.Q.value = 0.707;
-            
-            // Create waveshaper for harmonic warmth (subtle saturation)
-            state.waveshaper = state.audioContext.createWaveShaper();
-            state.waveshaper.curve = createWarmthCurve(state.warmth);
-            state.waveshaper.oversample = '4x';
-            
-            // Connect chain: waveshaper -> highshelf -> lowpass -> master -> analyser -> destination
-            state.waveshaper.connect(state.highShelfFilter);
-            state.highShelfFilter.connect(state.lowpassFilter);
-            state.lowpassFilter.connect(state.masterGain);
-            state.masterGain.connect(state.analyser);
-            state.analyser.connect(state.audioContext.destination);
-            
-            // Create brown noise buffer
-            createNoiseBuffer();
+            if (!state.audioContext) {
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
         }
-
-        function createWarmthCurve(amount) {
-            // Premium-grade soft-clipping curve with even harmonic generation
-            // Based on professional audio plugin design (FabFilter, Soundtoys)
-            const curve = new Float32Array(4096);
-            const k = typeof amount === 'number' ? Math.min(amount, 100) / 50 : 0;
-            const n = 4096;
+        
+        function makeWaveshaperCurve(amount) {
+            const samples = 44100;
+            const curve = new Float32Array(samples);
+            const k = amount / 100;
+            const n = 0.001;
             
-            for (let i = 0; i < n; i++) {
-                const x = (i * 2) / n - 1;
-                // Soft saturation curve - preserves transients while adding warmth
-                // tanh-like curve with adjustable saturation
-                const saturation = 1 + k * 0.5;
-                curve[i] = Math.tanh(x * saturation) / Math.tanh(saturation);
+            for (let i = 0; i < samples; i++) {
+                const x = (i * 2) / samples - 1;
+                curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
             }
             return curve;
         }
-
-        function createNoiseBuffer() {
-            if (!state.audioContext) return;
-            
-            const bufferSize = state.audioContext.sampleRate * 4; // 4 seconds for longer loop
-            state.noiseBuffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
-            const output = state.noiseBuffer.getChannelData(0);
-            
-            // Generate premium brown noise with spectral shaping
-            // Brown noise has -6dB/octave rolloff for deepest warmth
-            let lastOut = 0;
-            let accumulated = 0;
-            
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                
-                // Brown noise integration with gentle high-frequency suppression
-                accumulated += (lastOut + (0.02 * white)) / 1.02;
-                lastOut = accumulated;
-                
-                // Apply gentle lowpass to remove any remaining harshness
-                const smoothed = output[i > 0 ? i - 1 : 0] * 0.9 + lastOut * 0.1;
-                output[i] = smoothed * 2.5; // Compensate for gain loss
+        
+        function setupWaveshaper() {
+            if (state.waveshaper) {
+                try { state.waveshaper.disconnect(); } catch(e) {}
             }
             
-            // Crossfade the ends for seamless looping
-            const fadeLength = Math.floor(bufferSize * 0.01); // 1% fade
-            for (let i = 0; i < fadeLength; i++) {
-                const fade = i / fadeLength;
-                output[i] *= fade;
-                output[bufferSize - fadeLength + i] *= (1 - fade);
+            state.waveshaper = state.audioContext.createWaveShaper();
+            state.waveshaper.curve = makeWaveshaperCurve(state.warmth);
+            state.waveshaper.oversample = '4x';
+        }
+        
+        function setupLowpass() {
+            if (state.lowpassFilter) {
+                try { state.lowpassFilter.disconnect(); } catch(e) {}
+            }
+            
+            state.lowpassFilter = state.audioContext.createBiquadFilter();
+            state.lowpassFilter.type = 'lowpass';
+            state.lowpassFilter.frequency.value = state.lowpassFreq;
+            state.lowpassFilter.Q.value = 0.7;
+        }
+        
+        function setupDriftLFO() {
+            if (state.driftLFO) {
+                try {
+                    state.driftLFO.stop();
+                    state.driftLFO.disconnect();
+                    if (state.driftLFOGain) state.driftLFOGain.disconnect();
+                } catch(e) {}
+            }
+            
+            state.driftLFO = state.audioContext.createOscillator();
+            state.driftLFO.frequency.value = 0.2;
+            state.driftLFOGain = state.audioContext.createGain();
+            state.driftLFOGain.gain.value = state.driftAmount * 0.1;
+            
+            state.driftLFO.connect(state.driftLFOGain);
+            state.driftLFO.start();
+            
+            // Connect to oscillators if they exist
+            if (state.leftOscillator && state.rightOscillator) {
+                state.driftLFOGain.connect(state.leftOscillator.frequency);
+                state.driftLFOGain.connect(state.rightOscillator.frequency);
             }
         }
-
-        function startOscillators() {
-            if (!state.audioContext) return;
+        
+        function createBrownNoise() {
+            const bufferSize = 2 * state.audioContext.sampleRate;
+            const buffer = state.audioContext.createBuffer(1, bufferSize, state.audioContext.sampleRate);
+            const output = buffer.getChannelData(0);
             
-            // Disconnect old oscillators
-            if (state.leftOscillator) {
-                try { state.leftOscillator.stop(); } catch(e) {}
-                try { state.leftOscillator.disconnect(); } catch(e) {}
+            let lastOut = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                output[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = output[i];
+                output[i] *= 3.5;
             }
-            if (state.rightOscillator) {
-                try { state.rightOscillator.stop(); } catch(e) {}
-                try { state.rightOscillator.disconnect(); } catch(e) {}
-            }
+            return buffer;
+        }
+        
+        function startNoise() {
+            if (!state.noiseEnabled || state.noiseNode) return;
             
-            // Calculate L/R frequencies (binaural beat = difference)
-            const leftFreq = state.carrierFreq + state.beatFreq / 2;
-            const rightFreq = state.carrierFreq - state.beatFreq / 2;
+            state.noiseNode = state.audioContext.createBufferSource();
+            state.noiseNode.buffer = createBrownNoise();
+            state.noiseNode.loop = true;
             
-            // Create oscillators with selected waveform
-            state.leftOscillator = state.audioContext.createOscillator();
-            state.rightOscillator = state.audioContext.createOscillator();
-            state.leftOscillator.type = state.waveform;
-            state.rightOscillator.type = state.waveform;
+            state.noiseFilter = state.audioContext.createBiquadFilter();
+            state.noiseFilter.type = 'lowpass';
+            state.noiseFilter.frequency.value = 400;
             
-            // Set frequencies with phase coherence (start at same phase point)
-            state.leftOscillator.frequency.value = leftFreq;
-            state.rightOscillator.frequency.value = rightFreq;
+            state.noiseGain = state.audioContext.createGain();
+            state.noiseGain.gain.value = 0;
             
-            // Create individual gains for fade
-            state.leftGain = state.audioContext.createGain();
-            state.rightGain = state.audioContext.createGain();
-            state.leftGain.gain.value = 0;
-            state.rightGain.gain.value = 0;
+            state.noiseNode.connect(state.noiseFilter);
+            state.noiseFilter.connect(state.noiseGain);
+            state.noiseGain.connect(state.gainNode);
+            state.noiseNode.start();
             
-            // Create stereo panner
-            state.panner = state.audioContext.createStereoPanner();
-            state.panner.pan.value = state.pan;
-            
-            // Connect left channel
-            state.leftOscillator.connect(state.leftGain);
-            state.leftGain.connect(state.panner);
-            
-            // Connect right channel
-            state.rightOscillator.connect(state.rightGain);
-            state.rightGain.connect(state.panner);
-            
-            // Connect panner to warmth chain
-            state.panner.connect(state.waveshaper);
-            
-            // Start oscillators
-            state.leftOscillator.start();
-            state.rightOscillator.start();
-            
-            // Add organic drift if enabled
-            if (state.driftAmount > 0) {
-                setupDriftLFO();
-            }
-            
-            // DYNAMIC LOWPASS: Adjust filter frequency based on carrier for optimal pleasantness
-            // Higher carriers need higher cutoff, but never exceed pleasant range
-            const optimalLowpass = Math.min(
-                state.carrierFreq * 2.5, // Scale with carrier
-                Math.max(state.lowpassFreq, 400), // Respect user setting, minimum 400Hz
-                1200 // Hard ceiling for comfort
+            // Fade in noise
+            state.noiseGain.gain.linearRampToValueAtTime(
+                state.noiseVolume / 100 * 0.3,
+                state.audioContext.currentTime + 0.5
             );
-            if (state.lowpassFilter && state.audioContext) {
-                state.lowpassFilter.frequency.setTargetAtTime(
-                    optimalLowpass,
+        }
+        
+        function stopNoise() {
+            if (state.noiseGain) {
+                try {
+                    state.noiseGain.gain.linearRampToValueAtTime(0, state.audioContext.currentTime + 0.3);
+                } catch(e) {}
+            }
+            
+            setTimeout(() => {
+                if (state.noiseNode) {
+                    try {
+                        state.noiseNode.stop();
+                        state.noiseNode.disconnect();
+                        if (state.noiseFilter) state.noiseFilter.disconnect();
+                        if (state.noiseGain) state.noiseGain.disconnect();
+                    } catch(e) {}
+                    state.noiseNode = null;
+                    state.noiseFilter = null;
+                    state.noiseGain = null;
+                }
+            }, 350);
+        }
+        
+        function updateNoiseVolume() {
+            if (state.noiseGain && state.audioContext) {
+                state.noiseGain.gain.setTargetAtTime(
+                    state.noiseEnabled ? state.noiseVolume / 100 * 0.3 : 0,
                     state.audioContext.currentTime,
                     0.1
                 );
             }
-            
-            // Fade in
-            const fadeTime = state.isPlaying ? state.fadeTime : 0.1;
-            const currentTime = state.audioContext.currentTime;
-            state.leftGain.gain.linearRampToValueAtTime(0.5, currentTime + fadeTime);
-            state.rightGain.gain.linearRampToValueAtTime(0.5, currentTime + fadeTime);
-            
-            // Start noise if enabled
-            if (state.noiseEnabled) {
-                startNoise();
-            }
-            
-            // Update displays
-            updateLRDisplay();
         }
-
-        function setupDriftLFO() {
-            // Create a very slow LFO for organic frequency drift
-            if (state.driftLFO) {
-                try { state.driftLFO.stop(); } catch(e) {}
-                try { state.driftLFO.disconnect(); } catch(e) {}
-            }
+        
+        function buildAudioChain() {
+            // Build the complete audio chain
+            state.leftOscillator.connect(state.gainNode);
+            state.rightOscillator.connect(state.gainNode);
+            state.gainNode.connect(state.panner);
+            state.panner.connect(state.waveshaper);
+            state.waveshaper.connect(state.lowpassFilter);
+            state.lowpassFilter.connect(state.analyser);
+            state.analyser.connect(state.audioContext.destination);
             
-            state.driftLFO = state.audioContext.createOscillator();
-            state.driftLFOGain = state.audioContext.createGain();
-            
-            // Very slow drift (0.1-0.3 Hz for natural feel)
-            state.driftLFO.frequency.value = 0.2;
-            state.driftLFO.type = 'sine';
-            
-            // Drift amount in Hz (max 2-3 Hz based on setting)
-            const maxDrift = (state.driftAmount / 100) * 3;
-            state.driftLFOGain.gain.value = maxDrift;
-            
-            state.driftLFO.connect(state.driftLFOGain);
-            
-            // Connect to oscillator frequencies
-            if (state.leftOscillator) {
+            // Connect drift LFO to oscillators
+            if (state.driftLFOGain) {
                 state.driftLFOGain.connect(state.leftOscillator.frequency);
-            }
-            if (state.rightOscillator) {
                 state.driftLFOGain.connect(state.rightOscillator.frequency);
             }
-            
-            state.driftLFO.start();
         }
-
-        function stopOscillators() {
-            if (!state.audioContext) return;
-            
-            const fadeTime = state.fadeTime;
+        
+        function startOscillators() {
+            const wasPlaying = state.isPlaying;
             const currentTime = state.audioContext.currentTime;
             
-            // Fade out
-            if (state.leftGain && state.audioContext) {
+            // Fade out existing oscillators if playing
+            if (wasPlaying && state.gainNode) {
                 try {
-                    state.leftGain.gain.linearRampToValueAtTime(0, currentTime + fadeTime);
-                    state.rightGain.gain.linearRampToValueAtTime(0, currentTime + fadeTime);
+                    state.gainNode.gain.cancelScheduledValues(currentTime);
+                    state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, currentTime);
+                    state.gainNode.gain.linearRampToValueAtTime(0, currentTime + 0.05);
                 } catch(e) {}
             }
             
-            // Stop noise
-            stopNoise();
-            
-            // Stop drift LFO
-            if (state.driftLFO) {
-                try { state.driftLFO.stop(); } catch(e) {}
-                try { state.driftLFO.disconnect(); } catch(e) {}
-                state.driftLFO = null;
-                state.driftLFOGain = null;
-            }
-            
-            // Stop oscillators after fade
+            // Stop and disconnect old oscillators
             setTimeout(() => {
                 if (state.leftOscillator) {
                     try { state.leftOscillator.stop(); } catch(e) {}
                     try { state.leftOscillator.disconnect(); } catch(e) {}
+                    state.leftOscillator = null;
                 }
                 if (state.rightOscillator) {
                     try { state.rightOscillator.stop(); } catch(e) {}
                     try { state.rightOscillator.disconnect(); } catch(e) {}
+                    state.rightOscillator = null;
                 }
-                state.leftOscillator = null;
-                state.rightOscillator = null;
-            }, fadeTime * 1000 + 100);
+                
+                // Create new oscillators
+                const leftFreq = state.carrierFreq + state.beatFreq / 2;
+                const rightFreq = state.carrierFreq - state.beatFreq / 2;
+                
+                state.leftOscillator = state.audioContext.createOscillator();
+                state.rightOscillator = state.audioContext.createOscillator();
+                
+                state.leftOscillator.type = state.waveform;
+                state.rightOscillator.type = state.waveform;
+                state.leftOscillator.frequency.value = leftFreq;
+                state.rightOscillator.frequency.value = rightFreq;
+                
+                // Create nodes if they don't exist
+                if (!state.gainNode) state.gainNode = state.audioContext.createGain();
+                if (!state.analyser) {
+                    state.analyser = state.audioContext.createAnalyser();
+                    state.analyser.fftSize = 2048;
+                }
+                if (!state.panner) state.panner = state.audioContext.createStereoPanner();
+                
+                state.gainNode.gain.value = 0;
+                state.panner.pan.value = state.pan;
+                
+                setupLowpass();
+                setupWaveshaper();
+                setupDriftLFO();
+                
+                buildAudioChain();
+                
+                // Start oscillators
+                state.leftOscillator.start();
+                state.rightOscillator.start();
+                
+                // Fade in
+                const fadeTime = Math.max(0.05, state.fadeTime);
+                state.gainNode.gain.setValueAtTime(0, currentTime + 0.05);
+                state.gainNode.gain.linearRampToValueAtTime(state.volume / 100, currentTime + 0.05 + fadeTime);
+                
+                // Start noise if enabled
+                if (state.noiseEnabled) {
+                    startNoise();
+                }
+            }, wasPlaying ? 100 : 0);
         }
-
-        function startNoise() {
-            if (!state.audioContext || !state.noiseBuffer) return;
+        
+        function stopOscillators() {
+            const fadeTime = state.fadeTime;
+            const currentTime = state.audioContext.currentTime;
             
-            // Disconnect old noise node
-            if (state.noiseNode) {
-                try { state.noiseNode.stop(); } catch(e) {}
-                try { state.noiseNode.disconnect(); } catch(e) {}
+            if (state.gainNode) {
+                try {
+                    state.gainNode.gain.cancelScheduledValues(currentTime);
+                    state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, currentTime);
+                    state.gainNode.gain.linearRampToValueAtTime(0, currentTime + fadeTime);
+                } catch(e) {}
             }
             
-            state.noiseNode = state.audioContext.createBufferSource();
-            state.noiseNode.buffer = state.noiseBuffer;
-            state.noiseNode.loop = true;
-            
-            // Premium noise filtering - gentle lowpass for ambient warmth
-            state.noiseFilter = state.audioContext.createBiquadFilter();
-            state.noiseFilter.type = 'lowpass';
-            state.noiseFilter.frequency.value = 350; // Slightly lower for warmth
-            state.noiseFilter.Q.value = 0.5; // Smoother rolloff
-            
-            // Add a gentle highpass to remove subsonic rumble
-            state.noiseHighpass = state.audioContext.createBiquadFilter();
-            state.noiseHighpass.type = 'highpass';
-            state.noiseHighpass.frequency.value = 40; // Remove subsonic content
-            state.noiseHighpass.Q.value = 0.707;
-            
-            state.noiseGain = state.audioContext.createGain();
-            state.noiseGain.gain.value = state.noiseEnabled ? state.noiseVolume / 200 : 0;
-            
-            // Connect: noise -> highpass -> lowpass -> gain -> warmth chain
-            state.noiseNode.connect(state.noiseHighpass);
-            state.noiseHighpass.connect(state.noiseFilter);
-            state.noiseFilter.connect(state.noiseGain);
-            state.noiseGain.connect(state.waveshaper);
-            
-            state.noiseNode.start();
+            setTimeout(() => {
+                if (state.leftOscillator) {
+                    try {
+                        state.leftOscillator.stop();
+                        state.leftOscillator.disconnect();
+                    } catch(e) {}
+                    state.leftOscillator = null;
+                }
+                if (state.rightOscillator) {
+                    try {
+                        state.rightOscillator.stop();
+                        state.rightOscillator.disconnect();
+                    } catch(e) {}
+                    state.rightOscillator = null;
+                }
+                if (state.driftLFO) {
+                    try {
+                        state.driftLFO.stop();
+                        state.driftLFO.disconnect();
+                        if (state.driftLFOGain) state.driftLFOGain.disconnect();
+                    } catch(e) {}
+                    state.driftLFO = null;
+                    state.driftLFOGain = null;
+                }
+                stopNoise();
+            }, fadeTime * 1000 + 50);
         }
-
-        function stopNoise() {
-            if (state.noiseNode) {
-                try { state.noiseNode.stop(); } catch(e) {}
-                try { state.noiseNode.disconnect(); } catch(e) {}
-            }
-            if (state.noiseHighpass) {
-                try { state.noiseHighpass.disconnect(); } catch(e) {}
-            }
-            state.noiseNode = null;
-            state.noiseHighpass = null;
-        }
-
+        
         function updateMasterVolume() {
-            if (state.masterGain && state.audioContext) {
-                state.masterGain.gain.linearRampToValueAtTime(
+            if (state.gainNode && state.audioContext) {
+                state.gainNode.gain.setTargetAtTime(
                     state.volume / 100,
-                    state.audioContext.currentTime + 0.1
+                    state.audioContext.currentTime,
+                    0.1
                 );
             }
         }
-
+        
         function updatePan() {
             if (state.panner && state.audioContext) {
-                state.panner.pan.linearRampToValueAtTime(
-                    state.pan,
-                    state.audioContext.currentTime + 0.1
-                );
+                state.panner.pan.setTargetAtTime(state.pan, state.audioContext.currentTime, 0.1);
             }
         }
-
+        
         function updateWarmth() {
-            if (state.waveshaper && state.audioContext) {
-                state.waveshaper.curve = createWarmthCurve(state.warmth);
+            if (state.audioContext && state.waveshaper) {
+                state.waveshaper.curve = makeWaveshaperCurve(state.warmth);
             }
         }
-
+        
         function updateLowpass() {
             if (state.lowpassFilter && state.audioContext) {
-                // Smooth transition for lowpass
-                state.lowpassFilter.frequency.setTargetAtTime(
-                    state.lowpassFreq,
-                    state.audioContext.currentTime,
-                    0.1
-                );
-            }
-            // Also update high-shelf for consistent frequency response
-            if (state.highShelfFilter && state.audioContext) {
-                // Adjust high-shelf frequency based on lowpass for coherent response
-                const highShelfFreq = Math.max(state.lowpassFreq * 8, 4000);
-                state.highShelfFilter.frequency.setTargetAtTime(
-                    highShelfFreq,
-                    state.audioContext.currentTime,
-                    0.1
-                );
+                state.lowpassFilter.frequency.setTargetAtTime(state.lowpassFreq, state.audioContext.currentTime, 0.1);
             }
         }
-
-        function updateNoiseVolume() {
-            if (state.noiseGain && state.audioContext) {
-                state.noiseGain.gain.linearRampToValueAtTime(
-                    state.noiseEnabled ? state.noiseVolume / 200 : 0,
-                    state.audioContext.currentTime + 0.1
-                );
-            }
-        }
-
-        // ============================================
-        // Knob Control System
-        // ============================================
-
-        class Knob {
-            constructor(element) {
-                this.element = element;
-                this.handle = element.querySelector('.knob-handle');
-                this.progress = element.querySelector('.knob-progress');
-                this.valueDisplay = element.parentElement.querySelector('.knob-value span');
-                this.unitDisplay = element.parentElement.querySelector('.knob-unit');
-                
-                this.min = parseFloat(element.dataset.min);
-                this.max = parseFloat(element.dataset.max);
-                this.value = parseFloat(element.dataset.value);
-                this.unit = element.dataset.unit;
-                
-                this.isDragging = false;
-                this.startY = 0;
-                this.startValue = 0;
-                
-                this.init();
-            }
-            
-            init() {
-                this.updateDisplay();
-                this.addEventListeners();
-            }
-            
-            addEventListeners() {
-                this.element.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-                this.element.addEventListener('keydown', (e) => this.onKeyDown(e));
-                this.element.addEventListener('contextmenu', (e) => e.preventDefault());
-            }
-            
-            onPointerDown(e) {
-                e.preventDefault();
-                this.isDragging = true;
-                this.startY = e.clientY;
-                this.startValue = this.value;
-                
-                this.element.setPointerCapture(e.pointerId);
-                this.element.style.cursor = 'grabbing';
-                
-                document.addEventListener('pointermove', this.onPointerMove);
-                document.addEventListener('pointerup', this.onPointerUp);
-            }
-            
-            onPointerMove = (e) => {
-                if (!this.isDragging) return;
-                
-                const deltaY = this.startY - e.clientY;
-                const range = this.max - this.min;
-                const sensitivity = range / 200;
-                
-                let newValue = this.startValue + deltaY * sensitivity;
-                newValue = Math.max(this.min, Math.min(this.max, newValue));
-                
-                this.setValue(newValue);
-            }
-            
-            onPointerUp = (e) => {
-                if (!this.isDragging) return;
-                
-                this.isDragging = false;
-                this.element.releasePointerCapture(e.pointerId);
-                this.element.style.cursor = 'grab';
-                
-                document.removeEventListener('pointermove', this.onPointerMove);
-                document.removeEventListener('pointerup', this.onPointerUp);
-            }
-            
-            onKeyDown(e) {
-                const step = (this.max - this.min) / 50;
-                
-                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    this.setValue(Math.min(this.max, this.value + step));
-                } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    this.setValue(Math.max(this.min, this.value - step));
-                }
-            }
-            
-            setValue(newValue) {
-                this.value = newValue;
-                this.element.dataset.value = newValue;
-                this.updateDisplay();
-                this.onValueChange(newValue);
-            }
-            
-            updateDisplay() {
-                const percentage = (this.value - this.min) / (this.max - this.min);
-                const dashArray = 188.5;
-                const dashOffset = dashArray * (1 - percentage);
-                
-                if (this.progress) {
-                    this.progress.style.strokeDasharray = dashArray;
-                    this.progress.style.strokeDashoffset = dashOffset;
-                }
-                
-                if (this.valueDisplay) {
-                    if (this.unit === 'Hz' || this.unit === 's') {
-                        this.valueDisplay.textContent = this.value.toFixed(1);
-                    } else if (this.unit === '%') {
-                        this.valueDisplay.textContent = Math.round(this.value);
-                    } else {
-                        this.valueDisplay.textContent = this.value.toFixed(2);
-                    }
-                }
-            }
-            
-            onValueChange(newValue) {
-                // Override in specific knob handlers
-            }
-        }
-
+        
         // ============================================
         // Visualizer
         // ============================================
-
+        
+        let visualizerAnimationId = null;
+        let visualizerCanvas, visualizerCtx;
+        
         function initVisualizer() {
-            const canvas = document.getElementById('visualizer');
-            const ctx = canvas.getContext('2d');
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
+            visualizerCanvas = document.getElementById('visualizer');
+            const container = visualizerCanvas.parentElement;
+            const rect = container.getBoundingClientRect();
             
-            function draw() {
-                requestAnimationFrame(draw);
-                
-                if (!state.analyser || !state.isPlaying) {
-                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    return;
-                }
-                
-                const bufferLength = state.analyser.timeDomainData.length;
-                const dataArray = new Uint8Array(bufferLength);
-                state.analyser.getByteTimeDomainData(dataArray);
-                
-                ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
-                ctx.shadowBlur = 12;
-                ctx.shadowColor = getComputedStyle(document.documentElement).getPropertyValue('--accent');
-                
-                ctx.beginPath();
-                
-                const sliceWidth = canvas.width / bufferLength;
-                let x = 0;
-                
-                for (let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 128.0;
-                    const y = v * canvas.height / 2;
-                    
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-                    
-                    x += sliceWidth;
-                }
-                
-                ctx.lineTo(canvas.width, canvas.height / 2);
-                ctx.stroke();
-                
-                ctx.shadowBlur = 0;
+            visualizerCanvas.width = rect.width * window.devicePixelRatio;
+            visualizerCanvas.height = rect.height * window.devicePixelRatio;
+            
+            visualizerCtx = visualizerCanvas.getContext('2d');
+            visualizerCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            drawVisualizer();
+        }
+        
+        function drawVisualizer() {
+            const width = visualizerCanvas.width / window.devicePixelRatio;
+            const height = visualizerCanvas.height / window.devicePixelRatio;
+            
+            visualizerCtx.clearRect(0, 0, width, height);
+            
+            if (!state.analyser) {
+                // Draw idle state
+                visualizerCtx.fillStyle = 'rgba(255,255,255,0.02)';
+                visualizerCtx.fillRect(0, height / 2 - 1, width, 2);
+                visualizerAnimationId = requestAnimationFrame(drawVisualizer);
+                return;
             }
             
-            draw();
+            const bufferLength = state.analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            state.analyser.getByteTimeDomainData(dataArray);
+            
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+            visualizerCtx.strokeStyle = accent;
+            visualizerCtx.lineWidth = 2;
+            visualizerCtx.shadowBlur = 12;
+            visualizerCtx.shadowColor = accent;
+            
+            visualizerCtx.beginPath();
+            
+            const sliceWidth = width / bufferLength;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * height / 2;
+                
+                if (i === 0) {
+                    visualizerCtx.moveTo(x, y);
+                } else {
+                    visualizerCtx.lineTo(x, y);
+                }
+                
+                x += sliceWidth;
+            }
+            
+            visualizerCtx.lineTo(width, height / 2);
+            visualizerCtx.stroke();
+            
+            visualizerCtx.shadowBlur = 0;
+            
+            visualizerAnimationId = requestAnimationFrame(drawVisualizer);
         }
-
+        
         // ============================================
         // Brainwave State Badge
         // ============================================
+        
+        function hexToRgb(hex) {
+            const normalized = hex.replace('#', '').trim();
+            const value = normalized.length === 3
+                ? normalized.split('').map(char => char + char).join('')
+                : normalized;
+
+            return {
+                r: parseInt(value.slice(0, 2), 16),
+                g: parseInt(value.slice(2, 4), 16),
+                b: parseInt(value.slice(4, 6), 16)
+            };
+        }
+
+        function getAccentContrast(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+            return yiq >= 160 ? '#0A0A0F' : '#FFFFFF';
+        }
+
+        function getBrainwaveStateDetails(beat = state.beatFreq) {
+            if (beat < 4) {
+                return { key: 'delta', name: 'DELTA', color: state.colors.delta };
+            }
+
+            if (beat < 8) {
+                return { key: 'theta', name: 'THETA', color: state.colors.theta };
+            }
+
+            if (beat < 13) {
+                return { key: 'alpha', name: 'ALPHA', color: state.colors.alpha };
+            }
+
+            if (beat < 30) {
+                return { key: 'beta', name: 'BETA', color: state.colors.beta };
+            }
+
+            return { key: 'gamma', name: 'GAMMA', color: state.colors.gamma };
+        }
+
+        function applyTheme(themeName) {
+            const palette = THEME_PALETTES[themeName];
+            if (!palette) {
+                return;
+            }
+
+            state.currentTheme = themeName;
+            state.colors = { ...palette };
+
+            document.documentElement.style.setProperty('--accent-delta', palette.delta);
+            document.documentElement.style.setProperty('--accent-theta', palette.theta);
+            document.documentElement.style.setProperty('--accent-alpha', palette.alpha);
+            document.documentElement.style.setProperty('--accent-beta', palette.beta);
+            document.documentElement.style.setProperty('--accent-gamma', palette.gamma);
+
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                const isActive = btn.dataset.theme === themeName;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-pressed', String(isActive));
+            });
+
+            updateBrainwaveBadge();
+        }
 
         function updateBrainwaveBadge() {
             const beat = state.beatFreq;
-            let stateName, stateColor;
-            
-            if (beat < 4) {
-                stateName = 'DELTA';
-                stateColor = state.colors.delta;
-            } else if (beat < 8) {
-                stateName = 'THETA';
-                stateColor = state.colors.theta;
-            } else if (beat < 13) {
-                stateName = 'ALPHA';
-                stateColor = state.colors.alpha;
-            } else if (beat < 30) {
-                stateName = 'BETA';
-                stateColor = state.colors.beta;
-            } else {
-                stateName = 'GAMMA';
-                stateColor = state.colors.gamma;
-            }
+            const activeState = getBrainwaveStateDetails(beat);
+            const stateName = activeState.name;
+            const stateColor = activeState.color;
+            const accentContrast = getAccentContrast(stateColor);
             
             document.documentElement.style.setProperty('--accent', stateColor);
+            document.documentElement.style.setProperty('--accent-contrast', accentContrast);
             
             const badge = document.querySelector('.state-badge .state-text');
             const dot = document.querySelector('.state-dot');
@@ -1500,16 +1819,16 @@
             
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.classList.remove('active');
-                if (btn.dataset.state === stateName.toLowerCase()) {
+                if (btn.dataset.state === activeState.key) {
                     btn.classList.add('active');
                 }
             });
         }
-
+        
         // ============================================
         // L/R Frequency Display
         // ============================================
-
+        
         function updateLRDisplay() {
             const leftFreq = state.carrierFreq + state.beatFreq / 2;
             const rightFreq = state.carrierFreq - state.beatFreq / 2;
@@ -1517,17 +1836,17 @@
             document.getElementById('leftFreq').textContent = leftFreq.toFixed(1);
             document.getElementById('rightFreq').textContent = rightFreq.toFixed(1);
         }
-
+        
         // ============================================
         // Timer System
         // ============================================
-
+        
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
-
+        
         function startSessionTimer() {
             if (state.timerInterval) {
                 clearInterval(state.timerInterval);
@@ -1540,7 +1859,7 @@
                 document.getElementById('timerDisplay').textContent = formatTime(elapsed);
             }, 1000);
         }
-
+        
         function stopSessionTimer() {
             if (state.timerInterval) {
                 clearInterval(state.timerInterval);
@@ -1548,7 +1867,7 @@
             }
             document.getElementById('timerDisplay').textContent = '00:00';
         }
-
+        
         function setPresetTimer(minutes) {
             if (state.presetTimer) {
                 clearInterval(state.presetTimer);
@@ -1579,7 +1898,7 @@
                 }
             }, 1000);
         }
-
+        
         function clearPresetTimer() {
             if (state.presetTimer) {
                 clearInterval(state.presetTimer);
@@ -1590,11 +1909,11 @@
                 btn.classList.remove('active');
             });
         }
-
+        
         // ============================================
         // Play/Stop Control
         // ============================================
-
+        
         function playAudio() {
             initAudioContext();
             
@@ -1608,12 +1927,10 @@
             
             document.getElementById('playBtn').classList.add('playing');
             document.getElementById('playBtnText').textContent = '■ STOP';
-            document.querySelector('.state-badge .state-text').textContent = 
-                `${getBrainwaveName(state.beatFreq)} — ${state.beatFreq.toFixed(1)} Hz`;
             
             updateBrainwaveBadge();
         }
-
+        
         function stopAudio() {
             state.isPlaying = false;
             stopOscillators();
@@ -1625,7 +1942,7 @@
             
             updateBrainwaveBadge();
         }
-
+        
         function togglePlay() {
             if (state.isPlaying) {
                 stopAudio();
@@ -1633,7 +1950,7 @@
                 playAudio();
             }
         }
-
+        
         function getBrainwaveName(beat) {
             if (beat < 4) return 'DELTA';
             if (beat < 8) return 'THETA';
@@ -1641,11 +1958,11 @@
             if (beat < 30) return 'BETA';
             return 'GAMMA';
         }
-
+        
         // ============================================
         // Reset Function
         // ============================================
-
+        
         function resetAll() {
             stopAudio();
             clearPresetTimer();
@@ -1690,23 +2007,12 @@
             
             updateLRDisplay();
             updateBrainwaveBadge();
-            
-            if (state.audioContext) {
-                if (state.leftOscillator) {
-                    try { state.leftOscillator.stop(); } catch(e) {}
-                    try { state.leftOscillator.disconnect(); } catch(e) {}
-                }
-                if (state.rightOscillator) {
-                    try { state.rightOscillator.stop(); } catch(e) {}
-                    try { state.rightOscillator.disconnect(); } catch(e) {}
-                }
-            }
         }
-
+        
         // ============================================
         // Event Listeners
         // ============================================
-
+        
         document.getElementById('playBtn').addEventListener('click', togglePlay);
         document.getElementById('playBtn').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -1714,7 +2020,7 @@
                 togglePlay();
             }
         });
-
+        
         document.getElementById('resetBtn').addEventListener('click', resetAll);
         document.getElementById('resetBtn').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -1722,7 +2028,7 @@
                 resetAll();
             }
         });
-
+        
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const preset = state.presets[btn.dataset.preset];
@@ -1749,7 +2055,7 @@
                 }
             });
         });
-
+        
         document.querySelectorAll('.waveform-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 state.waveform = btn.dataset.waveform;
@@ -1769,7 +2075,7 @@
                 }
             });
         });
-
+        
         document.querySelectorAll('.timer-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const minutes = parseInt(btn.dataset.timer);
@@ -1783,7 +2089,7 @@
                 }
             });
         });
-
+        
         document.getElementById('noiseToggle').addEventListener('click', () => {
             state.noiseEnabled = !state.noiseEnabled;
             
@@ -1807,24 +2113,41 @@
             }
         });
 
-        window.addEventListener('resize', () => {
-            const canvas = document.getElementById('visualizer');
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTheme(btn.dataset.theme);
+            });
+
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
         });
-
+        
+        window.addEventListener('resize', () => {
+            if (visualizerCanvas) {
+                const container = visualizerCanvas.parentElement;
+                const rect = container.getBoundingClientRect();
+                visualizerCanvas.width = rect.width * window.devicePixelRatio;
+                visualizerCanvas.height = rect.height * window.devicePixelRatio;
+            }
+            resizeGL();
+        });
+        
         // ============================================
-        // Initialize Knobs with Custom Handlers
+        // Initialize
         // ============================================
-
+        
         document.addEventListener('DOMContentLoaded', () => {
             initVisualizer();
-            updateBrainwaveBadge();
+            applyTheme(state.currentTheme);
             updateLRDisplay();
             
-            // Create knobs with value change handlers
             carrierKnob = new Knob(document.getElementById('carrierKnob'));
+            carrierKnob.min = 40;
+            carrierKnob.max = 500;
             carrierKnob.onValueChange = (val) => {
                 state.carrierFreq = val;
                 if (state.isPlaying) startOscillators();
@@ -1832,6 +2155,8 @@
             };
             
             beatKnob = new Knob(document.getElementById('beatKnob'));
+            beatKnob.min = 0.5;
+            beatKnob.max = 50;
             beatKnob.onValueChange = (val) => {
                 state.beatFreq = val;
                 if (state.isPlaying) startOscillators();
@@ -1846,29 +2171,39 @@
             };
             
             fadeKnob = new Knob(document.getElementById('fadeKnob'));
+            fadeKnob.min = 0;
+            fadeKnob.max = 10;
             fadeKnob.onValueChange = (val) => {
                 state.fadeTime = val;
             };
             
             panKnob = new Knob(document.getElementById('panKnob'));
+            panKnob.min = -1;
+            panKnob.max = 1;
             panKnob.onValueChange = (val) => {
                 state.pan = val;
                 updatePan();
             };
             
             warmthKnob = new Knob(document.getElementById('warmthKnob'));
+            warmthKnob.min = 0;
+            warmthKnob.max = 100;
             warmthKnob.onValueChange = (val) => {
                 state.warmth = val;
                 updateWarmth();
             };
             
             lowpassKnob = new Knob(document.getElementById('lowpassKnob'));
+            lowpassKnob.min = 200;
+            lowpassKnob.max = 1200;
             lowpassKnob.onValueChange = (val) => {
                 state.lowpassFreq = val;
                 updateLowpass();
             };
             
             driftKnob = new Knob(document.getElementById('driftKnob'));
+            driftKnob.min = 0;
+            driftKnob.max = 100;
             driftKnob.onValueChange = (val) => {
                 state.driftAmount = val;
                 if (state.isPlaying) {
@@ -1882,7 +2217,7 @@
                 updateNoiseVolume();
             };
         });
-
+        
         window.addEventListener('beforeunload', () => {
             stopAudio();
             if (state.audioContext) {
