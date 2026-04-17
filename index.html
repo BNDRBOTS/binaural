@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BINARUAL — Binaural Beats Synthesizer</title>
     <style>
         :root {
@@ -37,6 +37,7 @@
             background: var(--bg-dark);
             color: var(--text-primary);
             min-height: 100vh;
+            min-height: 100dvh;
             overflow-x: hidden;
             position: relative;
         }
@@ -47,6 +48,7 @@
             inset: 0;
             z-index: 0;
             pointer-events: auto;
+            touch-action: pan-y pinch-zoom;
         }
 
         /* Main container */
@@ -692,14 +694,52 @@
             box-shadow: 0 0 18px var(--accent);
         }
 
+        .theme-btn,
+        .preset-btn,
+        .waveform-btn,
+        .timer-btn,
+        .noise-toggle,
+        .play-btn,
+        .reset-btn {
+            touch-action: manipulation;
+        }
+
+        .aux-row {
+            grid-template-columns: minmax(0, 1.3fr) minmax(132px, 0.8fr) minmax(0, 1.6fr);
+            align-items: center;
+        }
+
+        .aux-control {
+            justify-content: center;
+            min-height: 100%;
+        }
+
+        .aux-waveforms {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-bottom: 0;
+        }
+
         /* Responsive */
-        @media (max-width: 900px) {
-            .grid-4 {
-                grid-template-columns: repeat(2, 1fr);
+        @media (max-width: 1024px) {
+            .container {
+                padding: 20px;
             }
-            
+
+            .header,
+            .visualizer-container,
+            .panel {
+                padding: 20px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .grid-4,
             .knob-row {
-                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
             }
 
             .header {
@@ -708,62 +748,276 @@
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 900px) {
             .header {
                 flex-direction: column;
-                gap: 16px;
-                text-align: center;
+                align-items: stretch;
             }
 
             .header-right {
-                width: 100%;
-                align-items: center;
+                align-items: stretch;
             }
 
             .theme-switcher {
-                width: 100%;
                 max-width: none;
-                justify-content: center;
+                justify-content: flex-start;
+            }
+
+            .state-badge {
+                align-self: flex-start;
+            }
+
+            .grid-4,
+            .knob-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .timer-section {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .aux-row {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            }
+
+            .aux-row > :first-child {
+                grid-column: 1 / -1;
+            }
+
+            .aux-waveforms {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            :root {
+                --knob-size: 72px;
+                --knob-size-sm: 58px;
+            }
+
+            .container {
+                padding: 16px 14px calc(28px + env(safe-area-inset-bottom));
+            }
+
+            .header,
+            .visualizer-container,
+            .panel {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .header {
+                gap: 14px;
+                margin-bottom: 20px;
+            }
+
+            .app-name {
+                font-size: clamp(22px, 7vw, 26px);
+                letter-spacing: 3px;
+            }
+
+            .tagline {
+                letter-spacing: 1.6px;
+            }
+
+            .header-right {
+                gap: 10px;
+            }
+
+            .theme-switcher {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
             }
 
             .theme-btn {
-                flex: 1 1 calc(50% - 8px);
                 min-width: 0;
+                width: 100%;
+                min-height: 44px;
+                padding: 10px 12px;
             }
-            
-            .grid-2, .grid-4, .knob-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .timer-section {
-                flex-direction: column;
-            }
-            
-            .preset-strip {
+
+            .state-badge {
+                width: 100%;
                 justify-content: center;
             }
-            
-            .waveform-selector {
-                flex-wrap: wrap;
+
+            .visualizer-container {
+                margin-bottom: 16px;
+                padding-top: 22px;
             }
-            
-            .main-controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
+
             .visualizer {
-                height: 100px;
+                height: 96px;
             }
-            
-            .knob {
-                width: 70px !important;
-                height: 70px !important;
+
+            .grid-2,
+            .grid-4,
+            .knob-row {
+                gap: 16px;
+                margin-bottom: 16px;
             }
-            
+
+            .preset-strip {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                width: 100%;
+            }
+
+            .preset-btn {
+                min-width: 0;
+                padding: 12px 10px;
+            }
+
+            .lr-display {
+                padding: 14px;
+                gap: 14px;
+            }
+
+            .lr-value {
+                font-size: clamp(20px, 7vw, 26px);
+            }
+
+            .brainwave-label {
+                font-size: 10px;
+                line-height: 1.5;
+            }
+
+            .knob-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .knob-container {
+                gap: 10px;
+                min-width: 0;
+            }
+
+            .knob-label {
+                font-size: 9px;
+                letter-spacing: 1.2px;
+            }
+
+            .knob-value {
+                font-size: 15px;
+                text-align: center;
+            }
+
+            .aux-row {
+                grid-template-columns: 1fr;
+            }
+
+            .aux-row > :first-child {
+                grid-column: auto;
+            }
+
+            .aux-control {
+                width: 100%;
+            }
+
+            .aux-waveforms {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .waveform-btn,
+            .noise-toggle {
+                min-height: 44px;
+            }
+
+            .timer-section {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+                margin-bottom: 20px;
+            }
+
+            .timer-presets {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+            }
+
+            .timer-btn {
+                padding: 12px 8px;
+            }
+
+            .timer-display {
+                align-items: flex-start;
+                min-height: 72px;
+            }
+
+            .timer-value {
+                font-size: clamp(28px, 10vw, 36px);
+            }
+
+            .countdown-overlay {
+                justify-content: flex-start;
+                padding-left: 2px;
+            }
+
+            .main-controls {
+                justify-content: center;
+                align-items: center;
+                gap: 16px;
+                padding-top: 8px;
+            }
+
             .play-btn {
-                width: 100px;
-                height: 100px;
+                width: min(31vw, 112px);
+                height: min(31vw, 112px);
+                min-width: 96px;
+                min-height: 96px;
+                font-size: 13px;
+                letter-spacing: 1.8px;
+            }
+
+            .play-icon {
+                font-size: 22px;
+            }
+
+            .reset-btn {
+                width: 56px;
+                height: 56px;
+                flex: 0 0 auto;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .theme-btn,
+            .preset-btn,
+            .waveform-btn,
+            .timer-btn,
+            .noise-toggle {
+                font-size: 9px;
+                letter-spacing: 1.2px;
+            }
+
+            .preset-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .knob-row {
+                gap: 14px 10px;
+            }
+
+            .main-controls {
+                gap: 14px;
+            }
+
+            .play-btn {
+                min-width: 92px;
+                min-height: 92px;
+            }
+
+            .reset-btn {
+                width: 52px;
+                height: 52px;
             }
         }
 
@@ -943,7 +1197,7 @@
         </div>
 
         <!-- Noise Controls -->
-        <div class="knob-row" style="grid-template-columns: 2fr 1fr 1fr;">
+        <div class="knob-row aux-row">
             <div class="knob-container">
                 <div class="knob" id="noiseKnob" tabindex="0" aria-label="Noise layer volume">
                     <svg viewBox="0 0 100 100">
@@ -955,11 +1209,11 @@
                 <div class="knob-label">NOISE</div>
                 <div class="knob-value"><span id="noiseValue">20</span><span class="knob-unit"> %</span></div>
             </div>
-            <div class="knob-container" style="justify-content: center;">
+            <div class="knob-container aux-control">
                 <button class="noise-toggle" id="noiseToggle" aria-label="Toggle noise layer">NOISE: OFF</button>
             </div>
-            <div class="knob-container" style="justify-content: center;">
-                <div class="waveform-selector" style="flex-wrap: wrap;">
+            <div class="knob-container aux-control">
+                <div class="waveform-selector aux-waveforms">
                     <button class="waveform-btn active" data-waveform="sine" aria-label="Sine waveform">SINE</button>
                     <button class="waveform-btn" data-waveform="triangle" aria-label="Triangle waveform">TRI</button>
                     <button class="waveform-btn" data-waveform="square" aria-label="Square waveform">SQR</button>
@@ -1160,15 +1414,18 @@
         });
         
         glCanvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
             const touch = e.touches[0];
-            updateMouse(touch.clientX, touch.clientY);
-        }, { passive: false });
+            if (touch) {
+                updateMouse(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
         
         glCanvas.addEventListener('touchstart', (e) => {
             const touch = e.touches[0];
-            updateMouse(touch.clientX, touch.clientY);
-        }, { passive: false });
+            if (touch) {
+                updateMouse(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
         
         // Animation loop
         function renderGL() {
